@@ -37,6 +37,31 @@ class Scene:
         # so click handlers can guard on this without per-scene boilerplate.
         self.playing = False
 
+
+def _set_timeline_i(self, idx: int) -> None:
+    """Set the current timeline index (clamped) and apply the snapshot."""
+    if not self.timeline:
+        return
+    idx = max(0, min(len(self.timeline) - 1, int(idx)))
+    self.timeline_i = idx
+    self.band.apply_snapshot(self.timeline[idx])
+
+def _set_markers_from_queue(self) -> None:
+    """Populate marker_counts with 'set' boundaries based on scheduled actions."""
+    self.marker_counts = []
+    if not self.timeline:
+        return
+    # Count 0 is the initial set; markers mark the end of each queued action block.
+    total = 0
+    for act in getattr(self.band, "queue", []):
+        try:
+            total += int(act.counts)
+        except Exception:
+            continue
+        # Clamp to the last valid index in the timeline
+        total = max(0, min(total, len(self.timeline) - 1))
+        self.marker_counts.append(total)
+
     def _count_from_timeline_pos(self, pos: tuple[int, int]) -> int | None:
         """Map a click in the counts strip to a timeline index."""
         if not self.timeline or len(self.timeline) <= 1:
