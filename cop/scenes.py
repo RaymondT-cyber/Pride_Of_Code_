@@ -37,6 +37,22 @@ class Scene:
         # so click handlers can guard on this without per-scene boilerplate.
         self.playing = False
 
+    def _count_from_timeline_pos(self, pos: tuple[int, int]) -> int | None:
+        """Map a click in the counts strip to a timeline index."""
+        if not self.timeline or len(self.timeline) <= 1:
+            return None
+        if not self.counts_bar_rect.collidepoint(pos):
+            return None
+        rel = (pos[0] - self.counts_bar_rect.left) / max(1, self.counts_bar_rect.width)
+        rel = max(0.0, min(1.0, rel))
+        return int(round(rel * (len(self.timeline) - 1)))
+
+    def _jump_to_count(self, idx: int) -> None:
+        if not self.timeline:
+            return
+        self.timeline_i = max(0, min(len(self.timeline) - 1, int(idx)))
+        self.band.apply_snapshot(self.timeline[self.timeline_i])
+
     def handle(self, ev: pygame.event.Event) -> None:
         pass
 
@@ -56,6 +72,22 @@ class TitleScene(Scene):
             "EDIT → RUN → WATCH → IMPROVE",
         ]
         self.logo_rect = pygame.Rect(16, 36, 96, 96)
+
+    def _count_from_timeline_pos(self, pos: tuple[int, int]) -> int | None:
+        """Map a click in the counts strip to a timeline index."""
+        if not self.timeline or len(self.timeline) <= 1:
+            return None
+        if not self.counts_bar_rect.collidepoint(pos):
+            return None
+        rel = (pos[0] - self.counts_bar_rect.left) / max(1, self.counts_bar_rect.width)
+        rel = max(0.0, min(1.0, rel))
+        return int(round(rel * (len(self.timeline) - 1)))
+
+    def _jump_to_count(self, idx: int) -> None:
+        if not self.timeline:
+            return
+        self.timeline_i = max(0, min(len(self.timeline) - 1, int(idx)))
+        self.band.apply_snapshot(self.timeline[self.timeline_i])
 
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
@@ -113,6 +145,22 @@ class SaveSlotsScene(Scene):
             ))
             y0 += 44
         self.toast_msg = None
+
+    def _count_from_timeline_pos(self, pos: tuple[int, int]) -> int | None:
+        """Map a click in the counts strip to a timeline index."""
+        if not self.timeline or len(self.timeline) <= 1:
+            return None
+        if not self.counts_bar_rect.collidepoint(pos):
+            return None
+        rel = (pos[0] - self.counts_bar_rect.left) / max(1, self.counts_bar_rect.width)
+        rel = max(0.0, min(1.0, rel))
+        return int(round(rel * (len(self.timeline) - 1)))
+
+    def _jump_to_count(self, idx: int) -> None:
+        if not self.timeline:
+            return
+        self.timeline_i = max(0, min(len(self.timeline) - 1, int(idx)))
+        self.band.apply_snapshot(self.timeline[self.timeline_i])
 
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
@@ -179,6 +227,22 @@ class CampaignHubScene(Scene):
         self.btn_back = Button(pygame.Rect(8, 184, 72, 24), "HOME")
         self.btn_sandbox = Button(pygame.Rect(288, 184, 88, 24), "SANDBOX", primary=True)
         self.selected_week = game.current_save.last_played_week if game.current_save else 1
+
+    def _count_from_timeline_pos(self, pos: tuple[int, int]) -> int | None:
+        """Map a click in the counts strip to a timeline index."""
+        if not self.timeline or len(self.timeline) <= 1:
+            return None
+        if not self.counts_bar_rect.collidepoint(pos):
+            return None
+        rel = (pos[0] - self.counts_bar_rect.left) / max(1, self.counts_bar_rect.width)
+        rel = max(0.0, min(1.0, rel))
+        return int(round(rel * (len(self.timeline) - 1)))
+
+    def _jump_to_count(self, idx: int) -> None:
+        if not self.timeline:
+            return
+        self.timeline_i = max(0, min(len(self.timeline) - 1, int(idx)))
+        self.band.apply_snapshot(self.timeline[self.timeline_i])
 
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
@@ -296,8 +360,9 @@ class LevelScene(Scene):
         self.btn_back = Button(pygame.Rect(300, 192, 72, 24), "BACK", hotkey="Esc")
 
         # editor / field layout (split-screen)
-        self.editor_rect = pygame.Rect(16, 40, 168, 112)
-        self.field_rect = pygame.Rect(200, 40, 168, 112)
+        self.editor_rect = pygame.Rect(16, 40, 168, 136)
+        self.field_rect = pygame.Rect(200, 40, 168, 136)
+        self.counts_bar_rect = pygame.Rect(20, 172, 344, 10)
         starter = "# Sandbox: write code to move marchers.\n" if sandbox else (level.starter_code if level else "")
         self.editor = TextEditor(self.editor_rect, starter)
         if self.game.current_save:
@@ -485,6 +550,22 @@ class LevelScene(Scene):
         self.editor.cx = len(self.editor.lines[-1])
         self._autosave_code()
 
+    def _count_from_timeline_pos(self, pos: tuple[int, int]) -> int | None:
+        """Map a click in the counts strip to a timeline index."""
+        if not self.timeline or len(self.timeline) <= 1:
+            return None
+        if not self.counts_bar_rect.collidepoint(pos):
+            return None
+        rel = (pos[0] - self.counts_bar_rect.left) / max(1, self.counts_bar_rect.width)
+        rel = max(0.0, min(1.0, rel))
+        return int(round(rel * (len(self.timeline) - 1)))
+
+    def _jump_to_count(self, idx: int) -> None:
+        if not self.timeline:
+            return
+        self.timeline_i = max(0, min(len(self.timeline) - 1, int(idx)))
+        self.band.apply_snapshot(self.timeline[self.timeline_i])
+
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_ESCAPE:
@@ -528,20 +609,16 @@ class LevelScene(Scene):
                 return
             if self.playing:
                 return
+            c = self._count_from_timeline_pos(ev.pos)
+            if c is not None:
+                self._jump_to_count(c)
+                return
             if self.btn_run.hit(ev.pos): self._run()
             elif self.btn_reset.hit(ev.pos): self._reset()
             elif self.btn_hint.hit(ev.pos): self._hint()
             elif self.btn_back.hit(ev.pos):
                 self._autosave_code()
                 self.game.pop()
-
-        if ev.type == pygame.MOUSEMOTION and self.scrub_drag:
-            c = self._count_from_timeline_pos(ev.pos)
-            if c is not None:
-                self._set_timeline_i(c)
-
-        if ev.type == pygame.MOUSEBUTTONUP and ev.button == 1:
-            self.scrub_drag = False
 
     def draw(self, dst: pygame.Surface) -> None:
         dst.fill(CASA_BLUE)
@@ -612,7 +689,7 @@ class LevelScene(Scene):
         dst.blit(count_label, (20, 171))
         if self.timeline:
             pct = min(1.0, self.timeline_i / max(1, len(self.timeline) - 1))
-            progress_bar(dst, pygame.Rect(20, 172, 344, 10), pct, f"SET {self.timeline_i}/{max(0, len(self.timeline)-1)}", self.game.assets.font_s)
+            progress_bar(dst, self.counts_bar_rect, pct, f"SET {self.timeline_i}/{max(0, len(self.timeline)-1)}", self.game.assets.font_s)
 
         if self.error:
             toast(dst, pygame.Rect(16, 142, 352, 14), self.error, self.game.assets.font_s, danger=True)
@@ -631,6 +708,22 @@ class ScoreScene(Scene):
             ("Hint Used", hint),
         ]
         self.btn_ok = Button(pygame.Rect(140, 176, 104, 32), "OK", primary=True)
+
+    def _count_from_timeline_pos(self, pos: tuple[int, int]) -> int | None:
+        """Map a click in the counts strip to a timeline index."""
+        if not self.timeline or len(self.timeline) <= 1:
+            return None
+        if not self.counts_bar_rect.collidepoint(pos):
+            return None
+        rel = (pos[0] - self.counts_bar_rect.left) / max(1, self.counts_bar_rect.width)
+        rel = max(0.0, min(1.0, rel))
+        return int(round(rel * (len(self.timeline) - 1)))
+
+    def _jump_to_count(self, idx: int) -> None:
+        if not self.timeline:
+            return
+        self.timeline_i = max(0, min(len(self.timeline) - 1, int(idx)))
+        self.band.apply_snapshot(self.timeline[self.timeline_i])
 
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
