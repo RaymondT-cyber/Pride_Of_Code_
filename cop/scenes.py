@@ -56,6 +56,7 @@ class TitleScene(Scene):
             "RETRO BAND CODING",
             "EDIT → RUN → WATCH → IMPROVE",
         ]
+        self.logo_rect = pygame.Rect(16, 36, 96, 96)
 
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
@@ -77,18 +78,29 @@ class TitleScene(Scene):
         dst.blit(sh, (LOGICAL_W//2 - title.get_width()//2 + 1, 3))
         dst.blit(title, (LOGICAL_W//2 - title.get_width()//2, 2))
 
-        # Logo (scale DOWN if needed, keep it crisp with nearest-neighbor scaling)
-        info_y = 36
+        # Logo (keep crisp with nearest-neighbor scaling)
         if self.game.assets.logo:
             logo = self.game.assets.logo
-            target_h = 96
+            target_h = 84
             h0 = max(1, logo.get_height())
             w0 = max(1, logo.get_width())
-            # Keep aspect ratio
             scale = target_h / h0
             w = max(24, int(w0 * scale))
             h = max(24, int(h0 * scale))
             scaled = pygame.transform.scale(logo, (w, h))
+            self.logo_rect = pygame.Rect(16, 36, w, h)
+            dst.blit(scaled, self.logo_rect.topleft)
+
+        # Keep copy in the right half so text never collides with the logo.
+        info_center_x = (self.logo_rect.right + LOGICAL_W) // 2
+        info_y = 72
+        for i, line in enumerate(self.info_lines):
+            info = self.game.assets.font_m.render(line, False, OFF_WHITE)
+            dst.blit(info, (info_center_x - info.get_width()//2, info_y + i * 14))
+
+        # Stable button layout below the title copy.
+        self.btn_play.rect.topleft = (140, 132)
+        self.btn_quit.rect.topleft = (140, 170)
             lx, ly = 16, 36
             dst.blit(scaled, (lx, ly))
             info_y = ly + h + 6
@@ -401,6 +413,26 @@ class LevelScene(Scene):
             return True
         return False
 
+    def _objective_text(self) -> str:
+        if self.sandbox or not self.level:
+            return "Objective: Free rehearsal"
+        obj = self.level.objective
+        t = obj.get("type")
+        if t == "reach":
+            tr = obj["target"]
+            return f"Objective: {obj['entity']} to ({tr['x']},{tr['y']})"
+        if t == "line":
+            return f"Objective: Form line of {obj['count']} at y={obj['y']}"
+        if t == "sync_swap":
+            return "Objective: Sync swap to x=16"
+        if t == "avoid_collision":
+            tr = obj["target"]
+            return f"Objective: Reach ({tr['x']},{tr['y']}) avoiding {obj['obstacle']}"
+        if t == "arc":
+            c = obj["center"]
+            return f"Objective: Arc radius {obj['radius']} around ({c['x']},{c['y']})"
+        return "Objective: Complete the drill"
+
     def _run(self) -> None:
         self.error = None
         self.pass_state = False
@@ -538,9 +570,14 @@ class LevelScene(Scene):
         self.btn_hint.draw(dst, self.game.assets.font_s, self.btn_hint.rect.collidepoint((mx,my)))
         self.btn_back.draw(dst, self.game.assets.font_s, self.btn_back.rect.collidepoint((mx,my)))
 
-        # Error/status
+        # Error/status and objective guidance
         if self.error:
             toast(dst, pygame.Rect(16, 156, 352, 24), self.error, self.game.assets.font_s, danger=True)
+        elif self.pass_state and self.toast_post:
+            toast(dst, pygame.Rect(16, 156, 352, 24), f"PASS: {self.toast_post}", self.game.assets.font_s)
+        else:
+            objective = self.game.assets.font_s.render(self._objective_text(), False, OFF_WHITE)
+            dst.blit(objective, (16, 162))
 
 class ScoreScene(Scene):
     def __init__(self, game: "Game", total: int, base: int, eff: int, clean: int, streak: int, hint: int):
