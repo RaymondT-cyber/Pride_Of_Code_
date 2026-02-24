@@ -101,6 +101,17 @@ class TitleScene(Scene):
         # Stable button layout below the title copy.
         self.btn_play.rect.topleft = (140, 132)
         self.btn_quit.rect.topleft = (140, 170)
+            lx, ly = 16, 36
+            dst.blit(scaled, (lx, ly))
+            info_y = ly + h + 6
+
+        for i, line in enumerate(self.info_lines):
+            info = self.game.assets.font_m.render(line, False, OFF_WHITE)
+            dst.blit(info, (LOGICAL_W//2 - info.get_width()//2, info_y + i * 14))
+
+        # Keep buttons below helper text; avoid overlap at default/logical size.
+        self.btn_play.rect.y = min(LOGICAL_H - 72, info_y + 28)
+        self.btn_quit.rect.y = self.btn_play.rect.bottom + 6
 
         mx, my = self.game.mouse_logical
         self.btn_play.draw(dst, self.game.assets.font_m, self.btn_play.rect.collidepoint((mx,my)))
