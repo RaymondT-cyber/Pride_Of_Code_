@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"name": "assets",
+			"path": "."
+		},
+		{
+			"name": "cop",
+			"path": "../cop"
+		},
+		{
+			"name": "data",
+			"path": "../data"
+		},
+		{
+			"name": "Pride_Of_Code",
+			"path": "../../../../../Pride_Of_Code"
+		}
+	],
+	"settings": {}
+}

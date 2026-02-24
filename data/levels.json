@@ -1,0 +1,216 @@
+{
+  "meta": {
+    "title": "CODE OF PRIDE",
+    "season_weeks": 16,
+    "logical_resolution": [
+      384,
+      216
+    ],
+    "grid_unit": 8,
+    "default_counts": 8
+  },
+  "levels": [
+    {
+      "id": 1,
+      "week": 1,
+      "title": "First Downbeat",
+      "mentor": "LEAH + JACOB",
+      "dialogue_pre": "\u201cWelcome, Director. One marcher. One move. Eight counts. Make it clean.\u201d",
+      "hint_text": "\u201cPut your destination in a variable so you can change it fast.\u201d",
+      "dialogue_post": "\u201cGood. Now rerun it\u2014same result. That\u2019s rehearsal trust.\u201d",
+      "allowed_api": [
+        "step_to",
+        "wait"
+      ],
+      "start_entities": [
+        {
+          "name": "DM",
+          "section": "DM",
+          "x": 5,
+          "y": 11
+        }
+      ],
+      "objective": {
+        "type": "reach",
+        "entity": "DM",
+        "target": {
+          "x": 20,
+          "y": 11
+        },
+        "tolerance": 0
+      },
+      "starter_code": "target_x = 20\ntarget_y = 11\nband.step_to('DM', target_x, target_y, counts=8)\n"
+    },
+    {
+      "id": 2,
+      "week": 2,
+      "title": "Set the Interval",
+      "mentor": "ALEXANDER",
+      "dialogue_pre": "\u201cIntervals are math. If your line is uneven, the audience sees it instantly.\u201d",
+      "hint_text": "\u201cUse a loop: each marcher\u2019s x changes by the same amount.\u201d",
+      "dialogue_post": "\u201cNice. Your code just taught spacing better than a thousand words.\u201d",
+      "allowed_api": [
+        "step_to",
+        "wait",
+        "spawn",
+        "set_pos",
+        "get_all"
+      ],
+      "start_entities": [],
+      "objective": {
+        "type": "line",
+        "count": 5,
+        "y": 11,
+        "x_start": 14,
+        "dx": 2
+      },
+      "starter_code": "y = 11\nx0 = 14\nspacing = 2\nfor i in range(5):\n    name = f'W{i+1}'\n    band.spawn(name, section='WINDS', x=x0 + i*spacing, y=y)\n"
+    },
+    {
+      "id": 3,
+      "week": 3,
+      "title": "Lock the Tempo",
+      "mentor": "DIEGO + DOMINIC",
+      "dialogue_pre": "\u201cWe move on time, not when we feel like it.\u201d",
+      "hint_text": "\u201cUse wait() so sections don\u2019t drift out of phase.\u201d",
+      "dialogue_post": "\u201cThat\u2019s ensemble timing. Keep the grid honest.\u201d",
+      "allowed_api": [
+        "step_to",
+        "wait",
+        "spawn",
+        "set_pos",
+        "get_all"
+      ],
+      "start_entities": [
+        {
+          "name": "P1",
+          "section": "PERC",
+          "x": 10,
+          "y": 7
+        },
+        {
+          "name": "P2",
+          "section": "PERC",
+          "x": 10,
+          "y": 9
+        },
+        {
+          "name": "W1",
+          "section": "WINDS",
+          "x": 10,
+          "y": 13
+        },
+        {
+          "name": "W2",
+          "section": "WINDS",
+          "x": 10,
+          "y": 15
+        }
+      ],
+      "objective": {
+        "type": "sync_swap",
+        "perc_hold_counts": 4,
+        "winds_move_counts": 4
+      },
+      "starter_code": "band.step_to('W1', 16, 13, counts=4)\nband.step_to('W2', 16, 15, counts=4)\n# Percussion holds\nband.wait(4)\n# Swap: winds hold, percussion moves\nband.step_to('P1', 16, 7, counts=4)\nband.step_to('P2', 16, 9, counts=4)\n"
+    },
+    {
+      "id": 4,
+      "week": 4,
+      "title": "Dynamic Decision",
+      "mentor": "KYLE",
+      "dialogue_pre": "\u201cPower is useless if we collide. Make a call.\u201d",
+      "hint_text": "\u201cIf the path is crowded, take more counts.\u201d",
+      "dialogue_post": "\u201cThat\u2019s leadership: adapt without panicking.\u201d",
+      "allowed_api": [
+        "step_to",
+        "wait",
+        "spawn",
+        "set_pos",
+        "get_pos",
+        "is_occupied"
+      ],
+      "start_entities": [
+        {
+          "name": "B1",
+          "section": "BRASS",
+          "x": 8,
+          "y": 11
+        },
+        {
+          "name": "B2",
+          "section": "BRASS",
+          "x": 12,
+          "y": 11
+        },
+        {
+          "name": "X",
+          "section": "OBST",
+          "x": 10,
+          "y": 11
+        }
+      ],
+      "objective": {
+        "type": "avoid_collision",
+        "entity": "B1",
+        "target": {
+          "x": 16,
+          "y": 11
+        },
+        "obstacle": "X"
+      },
+      "starter_code": "tx, ty = 16, 11\n# If the direct path is blocked, go around\nif band.is_occupied(10, 11):\n    band.step_to('B1', 10, 9, counts=4)\n    band.step_to('B1', tx, ty, counts=4)\nelse:\n    band.step_to('B1', tx, ty, counts=8)\n"
+    },
+    {
+      "id": 5,
+      "week": 5,
+      "title": "Visual Phrase",
+      "mentor": "ANNA + MYLEE",
+      "dialogue_pre": "\u201cMusic has phrases. So should drill.\u201d",
+      "hint_text": "\u201cWrap your move into a function, then reuse it.\u201d",
+      "dialogue_post": "\u201cNow we can build a whole show from a few good ideas.\u201d",
+      "allowed_api": [
+        "step_to",
+        "wait",
+        "spawn",
+        "set_pos",
+        "get_pos"
+      ],
+      "start_entities": [
+        {
+          "name": "G1",
+          "section": "GUARD",
+          "x": 12,
+          "y": 11
+        },
+        {
+          "name": "G2",
+          "section": "GUARD",
+          "x": 14,
+          "y": 11
+        },
+        {
+          "name": "G3",
+          "section": "GUARD",
+          "x": 16,
+          "y": 11
+        }
+      ],
+      "objective": {
+        "type": "arc",
+        "entities": [
+          "G1",
+          "G2",
+          "G3"
+        ],
+        "center": {
+          "x": 14,
+          "y": 11
+        },
+        "radius": 4,
+        "counts": 8
+      },
+      "starter_code": "import math  # blocked (use band.math)\n\n# Make an arc helper built from step_to()\ndef arc_out(names, cx, cy, radius, start_deg, end_deg, counts):\n    for i, name in enumerate(names):\n        t = i / max(1, (len(names)-1))\n        a = band.math.radians(start_deg + (end_deg-start_deg)*t)\n        x = int(round(cx + band.math.cos(a)*radius))\n        y = int(round(cy + band.math.sin(a)*radius))\n        band.step_to(name, x, y, counts=counts)\n\narc_out(['G1','G2','G3'], cx=14, cy=11, radius=4, start_deg=200, end_deg=340, counts=8)\n"
+    }
+  ]
+}
