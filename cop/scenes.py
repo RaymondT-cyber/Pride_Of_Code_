@@ -52,7 +52,10 @@ class TitleScene(Scene):
         super().__init__(game)
         self.btn_play = Button(pygame.Rect(140, 140, 104, 32), "PLAY", primary=True)
         self.btn_quit = Button(pygame.Rect(140, 176, 104, 24), "QUIT", primary=False)
-        self.info = "RETRO BAND CODING • EDIT → RUN → WATCH → IMPROVE"
+        self.info_lines = [
+            "RETRO BAND CODING",
+            "EDIT → RUN → WATCH → IMPROVE",
+        ]
 
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
@@ -75,7 +78,7 @@ class TitleScene(Scene):
         dst.blit(title, (LOGICAL_W//2 - title.get_width()//2, 2))
 
         # Logo (scale DOWN if needed, keep it crisp with nearest-neighbor scaling)
-        info_y = 110
+        info_y = 36
         if self.game.assets.logo:
             logo = self.game.assets.logo
             target_h = 96
@@ -86,12 +89,17 @@ class TitleScene(Scene):
             w = max(24, int(w0 * scale))
             h = max(24, int(h0 * scale))
             scaled = pygame.transform.scale(logo, (w, h))
-            lx, ly = 16, 40
+            lx, ly = 16, 36
             dst.blit(scaled, (lx, ly))
-            info_y = min(140, ly + h + 8)
+            info_y = ly + h + 6
 
-        info = self.game.assets.font_m.render(self.info, False, OFF_WHITE)
-        dst.blit(info, (16, info_y))
+        for i, line in enumerate(self.info_lines):
+            info = self.game.assets.font_m.render(line, False, OFF_WHITE)
+            dst.blit(info, (LOGICAL_W//2 - info.get_width()//2, info_y + i * 14))
+
+        # Keep buttons below helper text; avoid overlap at default/logical size.
+        self.btn_play.rect.y = min(LOGICAL_H - 72, info_y + 28)
+        self.btn_quit.rect.y = self.btn_play.rect.bottom + 6
 
         mx, my = self.game.mouse_logical
         self.btn_play.draw(dst, self.game.assets.font_m, self.btn_play.rect.collidepoint((mx,my)))
@@ -105,9 +113,9 @@ class SaveSlotsScene(Scene):
         y0 = 48
         for i in range(1,4):
             self.slot_btns.append((i,
-                Button(pygame.Rect(40, y0, 160, 32), f"SLOT {i}", primary=True),
-                Button(pygame.Rect(210, y0, 72, 32), "LOAD", primary=False),
-                Button(pygame.Rect(286, y0, 72, 32), "DEL", primary=False)
+                Button(pygame.Rect(168, y0 + 4, 56, 24), "NEW", primary=True),
+                Button(pygame.Rect(228, y0 + 4, 56, 24), "LOAD", primary=False),
+                Button(pygame.Rect(288, y0 + 4, 56, 24), "DEL", primary=False)
             ))
             y0 += 44
         self.toast_msg = None
