@@ -34,6 +34,9 @@ def present(logical: pygame.Surface, window: pygame.Surface) -> tuple[int,int,in
 class Scene:
     def __init__(self, game: "Game"):
         self.game = game
+        # Most scenes are not "playing" an animation timeline; keep a safe default
+        # so click handlers can guard on this without per-scene boilerplate.
+        self.playing = False
 
     def handle(self, ev: pygame.event.Event) -> None:
         pass
@@ -49,7 +52,11 @@ class TitleScene(Scene):
         super().__init__(game)
         self.btn_play = Button(pygame.Rect(140, 140, 104, 32), "PLAY", primary=True)
         self.btn_quit = Button(pygame.Rect(140, 176, 104, 24), "QUIT", primary=False)
-        self.info = "RETRO BAND CODING • EDIT → RUN → WATCH → IMPROVE"
+        self.info_lines = [
+            "RETRO BAND CODING",
+            "EDIT → RUN → WATCH → IMPROVE",
+        ]
+        self.logo_rect = pygame.Rect(16, 36, 96, 96)
 
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
@@ -60,35 +67,41 @@ class TitleScene(Scene):
             if self.btn_quit.hit(ev.pos):
                 self.game.running = False
 
-    def draw(self, dst: pygame.Surface) -> None:
-        dst.fill(CASA_BLUE)
-        # Header
-        pygame.draw.rect(dst, OUTLINE_BLACK, pygame.Rect(0,0,LOGICAL_W,24), 0)
-        pygame.draw.rect(dst, NAVY_DEEP, pygame.Rect(0,0,LOGICAL_W,24), 0)
-
+    def _draw_branding(self, dst: pygame.Surface) -> None:
+        """Draw title, logo, and helper copy with stable non-overlapping layout."""
         title = self.game.assets.font_l.render("CODE OF PRIDE", False, WHITE)
         sh = self.game.assets.font_l.render("CODE OF PRIDE", False, OUTLINE_BLACK)
         dst.blit(sh, (LOGICAL_W//2 - title.get_width()//2 + 1, 3))
         dst.blit(title, (LOGICAL_W//2 - title.get_width()//2, 2))
 
-        # Logo (scale DOWN if needed, keep it crisp with nearest-neighbor scaling)
-        info_y = 110
         if self.game.assets.logo:
             logo = self.game.assets.logo
-            target_h = 96
+            target_h = 84
             h0 = max(1, logo.get_height())
             w0 = max(1, logo.get_width())
-            # Keep aspect ratio
             scale = target_h / h0
             w = max(24, int(w0 * scale))
             h = max(24, int(h0 * scale))
             scaled = pygame.transform.scale(logo, (w, h))
-            lx, ly = 16, 40
-            dst.blit(scaled, (lx, ly))
-            info_y = min(140, ly + h + 8)
+            self.logo_rect = pygame.Rect(16, 36, w, h)
+            dst.blit(scaled, self.logo_rect.topleft)
 
-        info = self.game.assets.font_m.render(self.info, False, OFF_WHITE)
-        dst.blit(info, (16, info_y))
+        info_center_x = (self.logo_rect.right + LOGICAL_W) // 2
+        info_y = 72
+        for i, line in enumerate(self.info_lines):
+            info = self.game.assets.font_m.render(line, False, OFF_WHITE)
+            dst.blit(info, (info_center_x - info.get_width()//2, info_y + i * 14))
+
+    def draw(self, dst: pygame.Surface) -> None:
+        dst.fill(CASA_BLUE)
+        # Header
+        pygame.draw.rect(dst, OUTLINE_BLACK, pygame.Rect(0,0,LOGICAL_W,24), 0)
+        pygame.draw.rect(dst, NAVY_DEEP, pygame.Rect(0,0,LOGICAL_W,24), 0)
+        self._draw_branding(dst)
+
+        # Stable button layout below the title copy.
+        self.btn_play.rect.topleft = (140, 132)
+        self.btn_quit.rect.topleft = (140, 170)
 
         mx, my = self.game.mouse_logical
         self.btn_play.draw(dst, self.game.assets.font_m, self.btn_play.rect.collidepoint((mx,my)))
@@ -102,9 +115,9 @@ class SaveSlotsScene(Scene):
         y0 = 48
         for i in range(1,4):
             self.slot_btns.append((i,
-                Button(pygame.Rect(40, y0, 160, 32), f"SLOT {i}", primary=True),
-                Button(pygame.Rect(210, y0, 72, 32), "LOAD", primary=False),
-                Button(pygame.Rect(286, y0, 72, 32), "DEL", primary=False)
+                Button(pygame.Rect(168, y0 + 4, 56, 24), "NEW", primary=True),
+                Button(pygame.Rect(228, y0 + 4, 56, 24), "LOAD", primary=False),
+                Button(pygame.Rect(288, y0 + 4, 56, 24), "DEL", primary=False)
             ))
             y0 += 44
         self.toast_msg = None
@@ -252,7 +265,7 @@ class CampaignHubScene(Scene):
             txt1 = self.game.assets.font_m.render(f"WEEK {self.selected_week}: (not in MVP yet)", False, OFF_WHITE)
             dst.blit(txt1, (28, 120))
 
-        mx,my = pygame.mouse.get_pos()
+        mx, my = self.game.mouse_logical
         # Continue button
         can = self.game.current_save and self.selected_week <= self.game.current_save.week_unlocked and level is not None
         cont = Button(pygame.Rect(140, 140, 104, 32), "CONTINUE", primary=True, enabled=bool(can))
@@ -389,6 +402,26 @@ class LevelScene(Scene):
                     return False
             return True
         return False
+
+    def _objective_text(self) -> str:
+        if self.sandbox or not self.level:
+            return "Objective: Free rehearsal"
+        obj = self.level.objective
+        t = obj.get("type")
+        if t == "reach":
+            tr = obj["target"]
+            return f"Objective: {obj['entity']} to ({tr['x']},{tr['y']})"
+        if t == "line":
+            return f"Objective: Form line of {obj['count']} at y={obj['y']}"
+        if t == "sync_swap":
+            return "Objective: Sync swap to x=16"
+        if t == "avoid_collision":
+            tr = obj["target"]
+            return f"Objective: Reach ({tr['x']},{tr['y']}) avoiding {obj['obstacle']}"
+        if t == "arc":
+            c = obj["center"]
+            return f"Objective: Arc radius {obj['radius']} around ({c['x']},{c['y']})"
+        return "Objective: Complete the drill"
 
     def _run(self) -> None:
         self.error = None
@@ -527,9 +560,14 @@ class LevelScene(Scene):
         self.btn_hint.draw(dst, self.game.assets.font_s, self.btn_hint.rect.collidepoint((mx,my)))
         self.btn_back.draw(dst, self.game.assets.font_s, self.btn_back.rect.collidepoint((mx,my)))
 
-        # Error/status
+        # Error/status and objective guidance
         if self.error:
             toast(dst, pygame.Rect(16, 156, 352, 24), self.error, self.game.assets.font_s, danger=True)
+        elif self.pass_state and self.toast_post:
+            toast(dst, pygame.Rect(16, 156, 352, 24), f"PASS: {self.toast_post}", self.game.assets.font_s)
+        else:
+            objective = self.game.assets.font_s.render(self._objective_text(), False, OFF_WHITE)
+            dst.blit(objective, (16, 162))
 
 class ScoreScene(Scene):
     def __init__(self, game: "Game", total: int, base: int, eff: int, clean: int, streak: int, hint: int):
@@ -566,7 +604,7 @@ class ScoreScene(Scene):
             dst.blit(t, (72, y))
             y += 16
 
-        mx,my = pygame.mouse.get_pos()
+        mx, my = self.game.mouse_logical
         self.btn_ok.draw(dst, self.game.assets.font_m, self.btn_ok.rect.collidepoint((mx,my)))
 
 @dataclass
