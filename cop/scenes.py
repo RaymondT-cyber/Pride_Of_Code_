@@ -1,4 +1,3 @@
-\
 from __future__ import annotations
 
 import os
@@ -342,16 +341,23 @@ class LevelScene(Scene):
         self.pass_state = False
         self.used_hint = False
         self.playing = False
+        self.eval_on_end = False
+        self.scrub_drag = False
+        self.marker_counts = []
         self.timeline = []
         self.timeline_i = 0
         self.count_timer = 0.0
         self.count_step = 0.12  # seconds per count
         self._pending_lines = 0
+        self.eval_on_end = False
+        self.marker_counts: list[int] = []
+        self.scrub_drag = False
+        self.timeline_rect = pygame.Rect(16, 168, 352, 24)
 
-        self.btn_run = Button(pygame.Rect(16, 184, 72, 24), "RUN", primary=True, hotkey="Ctrl+R")
-        self.btn_reset = Button(pygame.Rect(92, 184, 72, 24), "RESET", hotkey="Ctrl+E")
-        self.btn_hint = Button(pygame.Rect(168, 184, 72, 24), "HINT", hotkey="Ctrl+H", enabled=not sandbox)
-        self.btn_back = Button(pygame.Rect(300, 184, 72, 24), "BACK", hotkey="Esc")
+        self.btn_run = Button(pygame.Rect(16, 192, 72, 24), "RUN", primary=True, hotkey="Ctrl+R")
+        self.btn_reset = Button(pygame.Rect(92, 192, 72, 24), "RESET", hotkey="Ctrl+E")
+        self.btn_hint = Button(pygame.Rect(168, 192, 72, 24), "HINT", hotkey="Ctrl+H", enabled=not sandbox)
+        self.btn_back = Button(pygame.Rect(300, 192, 72, 24), "BACK", hotkey="Esc")
 
         # editor / field layout (split-screen)
         self.editor_rect = pygame.Rect(16, 40, 168, 136)
@@ -516,9 +522,10 @@ class LevelScene(Scene):
         self.timeline_i = 0
         self.count_timer = 0.0
         self._pending_lines = result.lines_executed
-        # Start at initial snapshot
+        self.eval_on_end = True
         if self.timeline:
             self.band.apply_snapshot(self.timeline[0])
+        self._set_markers_from_queue()
         self.playing = True
         self.error = None
         self.editor.set_error_line(None)
@@ -573,11 +580,33 @@ class LevelScene(Scene):
                     self._reset(); return
                 if ev.key == pygame.K_h:
                     self._hint(); return
+            # Timeline navigation (when a timeline exists)
+            if ev.key == pygame.K_SPACE and self.timeline:
+                # Toggle playback from current count (replay mode, no scoring)
+                if self.playing:
+                    self.playing = False
+                    self.eval_on_end = False
+                else:
+                    self.playing = True
+                    self.eval_on_end = False
+                return
+            if ev.key in (pygame.K_LEFT, pygame.K_RIGHT) and self.timeline and not self.playing:
+                d = -1 if ev.key == pygame.K_LEFT else 1
+                self._set_timeline_i(self.timeline_i + d)
+                return
             # editor typing
             self.editor.handle_key(ev)
             self._autosave_code()
 
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+            # Timeline scrub has priority (works even during playback)
+            c = self._count_from_timeline_pos(ev.pos)
+            if c is not None:
+                self.playing = False
+                self.eval_on_end = False
+                self.scrub_drag = True
+                self._set_timeline_i(c)
+                return
             if self.playing:
                 return
             c = self._count_from_timeline_pos(ev.pos)
@@ -599,12 +628,12 @@ class LevelScene(Scene):
         header_bar(dst, pygame.Rect(0, 0, LOGICAL_W, 24), header, self.game.assets.font_m, right_text=right)
 
         # Panels
-        panel(dst, pygame.Rect(16, 32, 168, 152), "CODE", self.game.assets.font_s)
-        panel(dst, pygame.Rect(200, 32, 168, 152), "FIELD", self.game.assets.font_s)
+        panel(dst, pygame.Rect(16, 32, 168, 136), "CODE", self.game.assets.font_s)
+        panel(dst, pygame.Rect(200, 32, 168, 136), "FIELD", self.game.assets.font_s)
 
         # Toast
         if self.toast_pre:
-            toast(dst, pygame.Rect(16, 24, 352, 28), self.toast_pre, self.game.assets.font_s)
+            toast(dst, pygame.Rect(16, 24, 352, 24), self.toast_pre, self.game.assets.font_s)
 
         # Editor
         self.editor.draw(dst, self.game.assets.font_s)
@@ -637,12 +666,6 @@ class LevelScene(Scene):
             if e.section == "OBST": col = (50,50,50)
             pygame.draw.rect(dst, OUTLINE_BLACK, pygame.Rect(px-3, py-3, 8, 8), 1)
             pygame.draw.rect(dst, col, pygame.Rect(px-2, py-2, 6, 6))
-
-        # Count indicator
-        if self.playing:
-            c = self.timeline_i
-            label = self.game.assets.font_s.render(f"COUNT {c}", False, WHITE)
-            dst.blit(label, (self.field_rect.right - label.get_width() - 6, self.field_rect.top + 6))
 
 
         # Buttons
