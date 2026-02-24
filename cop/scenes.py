@@ -34,6 +34,9 @@ def present(logical: pygame.Surface, window: pygame.Surface) -> tuple[int,int,in
 class Scene:
     def __init__(self, game: "Game"):
         self.game = game
+        # Most scenes are not "playing" an animation timeline; keep a safe default
+        # so click handlers can guard on this without per-scene boilerplate.
+        self.playing = False
 
     def handle(self, ev: pygame.event.Event) -> None:
         pass
@@ -252,7 +255,7 @@ class CampaignHubScene(Scene):
             txt1 = self.game.assets.font_m.render(f"WEEK {self.selected_week}: (not in MVP yet)", False, OFF_WHITE)
             dst.blit(txt1, (28, 120))
 
-        mx,my = pygame.mouse.get_pos()
+        mx, my = self.game.mouse_logical
         # Continue button
         can = self.game.current_save and self.selected_week <= self.game.current_save.week_unlocked and level is not None
         cont = Button(pygame.Rect(140, 140, 104, 32), "CONTINUE", primary=True, enabled=bool(can))
@@ -566,7 +569,7 @@ class ScoreScene(Scene):
             dst.blit(t, (72, y))
             y += 16
 
-        mx,my = pygame.mouse.get_pos()
+        mx, my = self.game.mouse_logical
         self.btn_ok.draw(dst, self.game.assets.font_m, self.btn_ok.rect.collidepoint((mx,my)))
 
 @dataclass
