@@ -67,18 +67,13 @@ class TitleScene(Scene):
             if self.btn_quit.hit(ev.pos):
                 self.game.running = False
 
-    def draw(self, dst: pygame.Surface) -> None:
-        dst.fill(CASA_BLUE)
-        # Header
-        pygame.draw.rect(dst, OUTLINE_BLACK, pygame.Rect(0,0,LOGICAL_W,24), 0)
-        pygame.draw.rect(dst, NAVY_DEEP, pygame.Rect(0,0,LOGICAL_W,24), 0)
-
+    def _draw_branding(self, dst: pygame.Surface) -> None:
+        """Draw title, logo, and helper copy with stable non-overlapping layout."""
         title = self.game.assets.font_l.render("CODE OF PRIDE", False, WHITE)
         sh = self.game.assets.font_l.render("CODE OF PRIDE", False, OUTLINE_BLACK)
         dst.blit(sh, (LOGICAL_W//2 - title.get_width()//2 + 1, 3))
         dst.blit(title, (LOGICAL_W//2 - title.get_width()//2, 2))
 
-        # Logo (keep crisp with nearest-neighbor scaling)
         if self.game.assets.logo:
             logo = self.game.assets.logo
             target_h = 84
@@ -91,27 +86,22 @@ class TitleScene(Scene):
             self.logo_rect = pygame.Rect(16, 36, w, h)
             dst.blit(scaled, self.logo_rect.topleft)
 
-        # Keep copy in the right half so text never collides with the logo.
         info_center_x = (self.logo_rect.right + LOGICAL_W) // 2
         info_y = 72
         for i, line in enumerate(self.info_lines):
             info = self.game.assets.font_m.render(line, False, OFF_WHITE)
             dst.blit(info, (info_center_x - info.get_width()//2, info_y + i * 14))
 
+    def draw(self, dst: pygame.Surface) -> None:
+        dst.fill(CASA_BLUE)
+        # Header
+        pygame.draw.rect(dst, OUTLINE_BLACK, pygame.Rect(0,0,LOGICAL_W,24), 0)
+        pygame.draw.rect(dst, NAVY_DEEP, pygame.Rect(0,0,LOGICAL_W,24), 0)
+        self._draw_branding(dst)
+
         # Stable button layout below the title copy.
         self.btn_play.rect.topleft = (140, 132)
         self.btn_quit.rect.topleft = (140, 170)
-            lx, ly = 16, 36
-            dst.blit(scaled, (lx, ly))
-            info_y = ly + h + 6
-
-        for i, line in enumerate(self.info_lines):
-            info = self.game.assets.font_m.render(line, False, OFF_WHITE)
-            dst.blit(info, (LOGICAL_W//2 - info.get_width()//2, info_y + i * 14))
-
-        # Keep buttons below helper text; avoid overlap at default/logical size.
-        self.btn_play.rect.y = min(LOGICAL_H - 72, info_y + 28)
-        self.btn_quit.rect.y = self.btn_play.rect.bottom + 6
 
         mx, my = self.game.mouse_logical
         self.btn_play.draw(dst, self.game.assets.font_m, self.btn_play.rect.collidepoint((mx,my)))
