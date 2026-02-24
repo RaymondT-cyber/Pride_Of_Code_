@@ -1,4 +1,3 @@
-\
 from __future__ import annotations
 
 import os
@@ -288,20 +287,27 @@ class LevelScene(Scene):
         self.pass_state = False
         self.used_hint = False
         self.playing = False
+        self.eval_on_end = False
+        self.scrub_drag = False
+        self.marker_counts = []
         self.timeline = []
         self.timeline_i = 0
         self.count_timer = 0.0
         self.count_step = 0.12  # seconds per count
         self._pending_lines = 0
+        self.eval_on_end = False
+        self.marker_counts: list[int] = []
+        self.scrub_drag = False
+        self.timeline_rect = pygame.Rect(16, 168, 352, 24)
 
-        self.btn_run = Button(pygame.Rect(16, 184, 72, 24), "RUN", primary=True, hotkey="Ctrl+R")
-        self.btn_reset = Button(pygame.Rect(92, 184, 72, 24), "RESET", hotkey="Ctrl+E")
-        self.btn_hint = Button(pygame.Rect(168, 184, 72, 24), "HINT", hotkey="Ctrl+H", enabled=not sandbox)
-        self.btn_back = Button(pygame.Rect(300, 184, 72, 24), "BACK", hotkey="Esc")
+        self.btn_run = Button(pygame.Rect(16, 192, 72, 24), "RUN", primary=True, hotkey="Ctrl+R")
+        self.btn_reset = Button(pygame.Rect(92, 192, 72, 24), "RESET", hotkey="Ctrl+E")
+        self.btn_hint = Button(pygame.Rect(168, 192, 72, 24), "HINT", hotkey="Ctrl+H", enabled=not sandbox)
+        self.btn_back = Button(pygame.Rect(300, 192, 72, 24), "BACK", hotkey="Esc")
 
         # editor / field layout (split-screen)
-        self.editor_rect = pygame.Rect(16, 40, 168, 136)
-        self.field_rect = pygame.Rect(200, 40, 168, 136)
+        self.editor_rect = pygame.Rect(16, 40, 168, 112)
+        self.field_rect = pygame.Rect(200, 40, 168, 112)
         starter = "# Sandbox: write code to move marchers.\n" if sandbox else (level.starter_code if level else "")
         self.editor = TextEditor(self.editor_rect, starter)
 
@@ -309,6 +315,56 @@ class LevelScene(Scene):
         self.toast_post = None
 
         self._load_level()
+
+    def _timeline_total_counts(self) -> int:
+        # timeline includes snapshot[0] as initial state
+        return max(0, len(self.timeline) - 1)
+
+    def _clamp_timeline_i(self, i: int) -> int:
+        return max(0, min(int(i), self._timeline_total_counts()))
+
+    def _set_timeline_i(self, i: int) -> None:
+        if not self.timeline:
+            return
+        self.timeline_i = self._clamp_timeline_i(i)
+        self.band.apply_snapshot(self.timeline[self.timeline_i])
+
+    def _count_from_timeline_pos(self, pos: tuple[int,int]) -> int | None:
+        if not self.timeline:
+            return None
+        inner = self.timeline_rect.inflate(-8, -8)
+        if not inner.collidepoint(pos):
+            return None
+        total = self._timeline_total_counts()
+        if total <= 0:
+            return 0
+        x = max(inner.left, min(pos[0], inner.right))
+        r = (x - inner.left) / max(1, (inner.width - 1))
+        return int(round(r * total))
+
+    def _set_markers_from_queue(self) -> None:
+        # Mark set boundaries from the scheduled action queue.
+        # Boundaries include 0 and final count.
+        total = self._timeline_total_counts()
+        marks = [0]
+        c = 0
+        for act in getattr(self.band, 'queue', []):
+            c += int(getattr(act, 'counts', 0))
+            if c <= total:
+                marks.append(c)
+        if total not in marks:
+            marks.append(total)
+        self.marker_counts = sorted(set(marks))
+
+    def _current_set_index(self) -> int:
+        # 1-based set index based on marker boundaries
+        if not self.marker_counts:
+            return 1
+        i = 0
+        for k in range(len(self.marker_counts)):
+            if self.timeline_i >= self.marker_counts[k]:
+                i = k
+        return i + 1
 
     def _load_level(self) -> None:
         self.band.entities.clear()
@@ -444,9 +500,10 @@ class LevelScene(Scene):
         self.timeline_i = 0
         self.count_timer = 0.0
         self._pending_lines = result.lines_executed
-        # Start at initial snapshot
+        self.eval_on_end = True
         if self.timeline:
             self.band.apply_snapshot(self.timeline[0])
+        self._set_markers_from_queue()
         self.playing = True
         self.error = None
 
@@ -481,16 +538,46 @@ class LevelScene(Scene):
                     self._reset(); return
                 if ev.key == pygame.K_h:
                     self._hint(); return
+            # Timeline navigation (when a timeline exists)
+            if ev.key == pygame.K_SPACE and self.timeline:
+                # Toggle playback from current count (replay mode, no scoring)
+                if self.playing:
+                    self.playing = False
+                    self.eval_on_end = False
+                else:
+                    self.playing = True
+                    self.eval_on_end = False
+                return
+            if ev.key in (pygame.K_LEFT, pygame.K_RIGHT) and self.timeline and not self.playing:
+                d = -1 if ev.key == pygame.K_LEFT else 1
+                self._set_timeline_i(self.timeline_i + d)
+                return
             # editor typing
             self.editor.handle_key(ev)
 
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+            # Timeline scrub has priority (works even during playback)
+            c = self._count_from_timeline_pos(ev.pos)
+            if c is not None:
+                self.playing = False
+                self.eval_on_end = False
+                self.scrub_drag = True
+                self._set_timeline_i(c)
+                return
             if self.playing:
                 return
             if self.btn_run.hit(ev.pos): self._run()
             elif self.btn_reset.hit(ev.pos): self._reset()
             elif self.btn_hint.hit(ev.pos): self._hint()
             elif self.btn_back.hit(ev.pos): self.game.pop()
+
+        if ev.type == pygame.MOUSEMOTION and self.scrub_drag:
+            c = self._count_from_timeline_pos(ev.pos)
+            if c is not None:
+                self._set_timeline_i(c)
+
+        if ev.type == pygame.MOUSEBUTTONUP and ev.button == 1:
+            self.scrub_drag = False
 
     def draw(self, dst: pygame.Surface) -> None:
         dst.fill(CASA_BLUE)
@@ -502,12 +589,12 @@ class LevelScene(Scene):
         dst.blit(txt, (LOGICAL_W//2 - txt.get_width()//2, 6))
 
         # Panels
-        panel(dst, pygame.Rect(16, 32, 168, 152), "CODE", self.game.assets.font_s)
-        panel(dst, pygame.Rect(200, 32, 168, 152), "FIELD", self.game.assets.font_s)
+        panel(dst, pygame.Rect(16, 32, 168, 136), "CODE", self.game.assets.font_s)
+        panel(dst, pygame.Rect(200, 32, 168, 136), "FIELD", self.game.assets.font_s)
 
         # Toast
         if self.toast_pre:
-            toast(dst, pygame.Rect(16, 24, 352, 28), self.toast_pre, self.game.assets.font_s)
+            toast(dst, pygame.Rect(16, 24, 352, 24), self.toast_pre, self.game.assets.font_s)
 
         # Editor
         self.editor.draw(dst, self.game.assets.font_s)
@@ -541,12 +628,6 @@ class LevelScene(Scene):
             pygame.draw.rect(dst, OUTLINE_BLACK, pygame.Rect(px-3, py-3, 8, 8), 1)
             pygame.draw.rect(dst, col, pygame.Rect(px-2, py-2, 6, 6))
 
-        # Count indicator
-        if self.playing:
-            c = self.timeline_i
-            label = self.game.assets.font_s.render(f"COUNT {c}", False, WHITE)
-            dst.blit(label, (self.field_rect.right - label.get_width() - 6, self.field_rect.top + 6))
-
 
         # Buttons
         mx,my = self.game.mouse_logical
@@ -560,14 +641,52 @@ class LevelScene(Scene):
         self.btn_hint.draw(dst, self.game.assets.font_s, self.btn_hint.rect.collidepoint((mx,my)))
         self.btn_back.draw(dst, self.game.assets.font_s, self.btn_back.rect.collidepoint((mx,my)))
 
-        # Error/status and objective guidance
+        # Status strip (objective / errors)
+        status_r = pygame.Rect(16, 152, 352, 16)
+        pygame.draw.rect(dst, OUTLINE_BLACK, status_r, 2)
+        s_in = status_r.inflate(-4, -4)
+        pygame.draw.rect(dst, NAVY_DEEP, s_in)
         if self.error:
-            toast(dst, pygame.Rect(16, 156, 352, 24), self.error, self.game.assets.font_s, danger=True)
+            msg = self.error
+            t = self.game.assets.font_s.render(msg, False, (240, 120, 120))
         elif self.pass_state and self.toast_post:
-            toast(dst, pygame.Rect(16, 156, 352, 24), f"PASS: {self.toast_post}", self.game.assets.font_s)
+            t = self.game.assets.font_s.render(f"PASS: {self.toast_post}", False, OFF_WHITE)
         else:
-            objective = self.game.assets.font_s.render(self._objective_text(), False, OFF_WHITE)
-            dst.blit(objective, (16, 162))
+            t = self.game.assets.font_s.render(self._objective_text(), False, OFF_WHITE)
+        dst.blit(t, (status_r.left + 6, status_r.top + 4))
+
+        # Timeline (counts + set markers + playhead)
+        tr = self.timeline_rect
+        pygame.draw.rect(dst, OUTLINE_BLACK, tr, 2)
+        ti = tr.inflate(-4, -4)
+        pygame.draw.rect(dst, NAVY_DEEP, ti)
+        pygame.draw.rect(dst, (11, 47, 93), ti, 1)
+        total = self._timeline_total_counts()
+        # Track line
+        track = tr.inflate(-10, -12)
+        track_y = track.centery
+        pygame.draw.line(dst, OFF_WHITE, (track.left, track_y), (track.right, track_y), 1)
+        # Markers
+        if total > 0 and self.marker_counts:
+            for c in self.marker_counts:
+                x = track.left + int((track.width - 1) * (c / total))
+                pygame.draw.rect(dst, OFF_WHITE, pygame.Rect(x-2, track_y-6, 4, 4))
+        # Playhead
+        if total > 0:
+            px = track.left + int((track.width - 1) * (self.timeline_i / total))
+        else:
+            px = track.left
+        pygame.draw.line(dst, (228,178,49), (px, ti.top+2), (px, ti.bottom-2), 2)
+        # Labels
+        left = self.game.assets.font_s.render("COUNTS", False, OFF_WHITE)
+        dst.blit(left, (tr.left + 6, tr.top + 6))
+        if self.timeline:
+            set_i = self._current_set_index()
+            right_text = f"SET {set_i}  {self.timeline_i}/{total}"
+        else:
+            right_text = "RUN to generate timeline"
+        right = self.game.assets.font_s.render(right_text, False, OFF_WHITE)
+        dst.blit(right, (tr.right - right.get_width() - 6, tr.top + 6))
 
 class ScoreScene(Scene):
     def __init__(self, game: "Game", total: int, base: int, eff: int, clean: int, streak: int, hint: int):
