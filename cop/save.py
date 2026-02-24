@@ -17,6 +17,11 @@ class SaveSlot:
     name: str = "DIRECTOR"
     code_by_level: dict[str, str] = field(default_factory=dict)
 
+    # Story flags
+    intro_seen: bool = False
+    week1_briefing_seen: bool = False
+    week1_lesson_seen: bool = False
+
 
 def save_path(base_dir: str, slot: int) -> str:
     return os.path.join(base_dir, f"save_slot_{slot}.json")

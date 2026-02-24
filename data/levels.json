@@ -15,9 +15,9 @@
       "week": 1,
       "title": "First Downbeat",
       "mentor": "LEAH + JACOB",
-      "dialogue_pre": "\u201cWelcome, Director. One marcher. One move. Eight counts. Make it clean.\u201d",
-      "hint_text": "\u201cPut your destination in a variable so you can change it fast.\u201d",
-      "dialogue_post": "\u201cGood. Now rerun it\u2014same result. That\u2019s rehearsal trust.\u201d",
+      "dialogue_pre": "LEAH (DM): Set DM's dot using target_x/target_y. Then move in 8 counts.",
+      "hint_text": "JACOB (PERC): counts=8 is our 8-count phrase. Lock it in like a cadence.",
+      "dialogue_post": "LEAH: Same code, same move. That's how we keep the block together.",
       "allowed_api": [
         "step_to",
         "wait"
@@ -39,7 +39,7 @@
         },
         "tolerance": 0
       },
-      "starter_code": "target_x = 20\ntarget_y = 11\nband.step_to('DM', target_x, target_y, counts=8)\n"
+      "starter_code": "# WEEK 1: VARIABLES + COUNTS\n#\n# Build the move using variables.\n# (The lesson explains the structure.)\n\ntarget_x = 0  # TODO: set to the target x\ntarget_y = 0  # TODO: set to the target y\n\n# TODO: move DM using your variables in 8 counts\nband.step_to(\n    \"DM\",\n    target_x,\n    target_y,\n    counts=8,\n)\n"
     },
     {
       "id": 2,

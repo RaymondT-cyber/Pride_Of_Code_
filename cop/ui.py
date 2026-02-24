@@ -3,6 +3,37 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass
+
+def _wrap_safe_tokens(font: pygame.font.Font, text: str, max_w: int) -> list[str]:
+    """Wrap text to max_w. Splits long tokens so nothing overflows."""
+    out: list[str] = []
+    for para in text.split('\n'):
+        words = para.split(' ')
+        line = ''
+        for w in words:
+            test = (line + (' ' if line else '') + w) if w else (line + ' ').rstrip()
+            if font.size(test)[0] <= max_w:
+                line = test
+                continue
+            if line:
+                out.append(line)
+                line = ''
+            if font.size(w)[0] <= max_w:
+                line = w
+            else:
+                chunk = ''
+                for ch in w:
+                    t = chunk + ch
+                    if font.size(t)[0] <= max_w:
+                        chunk = t
+                    else:
+                        if chunk:
+                            out.append(chunk)
+                        chunk = ch
+                line = chunk
+        out.append(line)
+    return out
+
 from pathlib import Path
 
 import pygame
@@ -35,6 +66,97 @@ def _load_ui_tokens() -> dict:
 
 
 UI_TOKENS = _load_ui_tokens()
+
+def wrap_text(font: pygame.font.Font, text: str, max_width: int, preserve_newlines: bool = True) -> list[str]:
+    """
+    Word-wrap text to max_width. Handles very long tokens by splitting them so nothing
+    can render beyond the box width (critical for code-like strings).
+    """
+    if max_width <= 0:
+        return [text]
+
+    # Split into paragraphs if requested (keeps intentional blank lines/code blocks).
+    raw_lines = text.splitlines() if preserve_newlines else [text]
+    out: list[str] = []
+    for raw in raw_lines:
+        if preserve_newlines and raw.strip() == "":
+            out.append("")
+            continue
+
+        # Preserve leading indentation (useful for code samples).
+        indent = len(raw) - len(raw.lstrip(" "))
+        prefix = " " * indent
+        content = raw.lstrip(" ")
+        if content == "":
+            out.append(prefix)
+            continue
+
+        words = content.split(" ")
+        line = prefix
+        for w in words:
+            candidate = (line + (" " if line.strip() else "") + w) if line != prefix else (prefix + w)
+            if font.size(candidate)[0] <= max_width:
+                line = candidate
+                continue
+
+            # If the current line has content, push it and start a new line.
+            if line.strip() != "":
+                out.append(line)
+                line = prefix
+
+            # w might be longer than max_width: split it into chunks.
+            chunk = ""
+            for ch in w:
+                test = prefix + chunk + ch
+                if font.size(test)[0] <= max_width:
+                    chunk += ch
+                else:
+                    if chunk:
+                        out.append(prefix + chunk)
+                    chunk = ch
+            line = prefix + chunk
+        out.append(line)
+    return out
+
+def ellipsize(font: pygame.font.Font, text: str, max_width: int) -> str:
+    """Trim text with … so it fits max_width."""
+    if font.size(text)[0] <= max_width:
+        return text
+    ell = "…"
+    if font.size(ell)[0] > max_width:
+        return ""
+    lo, hi = 0, len(text)
+    best = ell
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        cand = text[:mid].rstrip() + ell
+        if font.size(cand)[0] <= max_width:
+            best = cand
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return best
+
+def blit_text_lines(dst: pygame.Surface, rect: pygame.Rect, font: pygame.font.Font, lines: list[str],
+                    color=(255,255,255), shadow: bool=True, line_gap: int=2) -> None:
+    """Draw pre-wrapped lines into rect, clipped."""
+    prev = dst.get_clip()
+    dst.set_clip(rect)
+    y = rect.top
+    lh = font.get_linesize()
+    for ln in lines:
+        if y + lh > rect.bottom:
+            break
+        if ln == "":
+            y += lh
+            continue
+        t = font.render(ln, False, color)
+        if shadow:
+            s = font.render(ln, False, OUTLINE_BLACK)
+            dst.blit(s, (rect.left + 1, y + 1))
+        dst.blit(t, (rect.left, y))
+        y += lh + line_gap
+    dst.set_clip(prev)
 
 
 @dataclass
@@ -137,26 +259,10 @@ def toast(dst: pygame.Surface, rect: pygame.Rect, text: str, font: pygame.font.F
     inner = rect.inflate(-4, -4)
     pygame.draw.rect(dst, bg, inner)
 
-    words = text.split()
-    lines: list[str] = []
-    line = ""
-    for w in words:
-        test = (line + " " + w).strip()
-        if font.size(test)[0] <= inner.width - U:
-            line = test
-        else:
-            lines.append(line)
-            line = w
-    if line:
-        lines.append(line)
-
-    y = inner.top + 4
-    for ln in lines[:5]:
-        t = font.render(ln, False, WHITE)
-        s = font.render(ln, False, OUTLINE_BLACK)
-        dst.blit(s, (inner.left + 5, y + 1))
-        dst.blit(t, (inner.left + 4, y))
-        y += t.get_height() + 2
+    # Wrap safely (break long tokens) and clip so nothing leaks.
+    lines = wrap_text(font, text, max_width=inner.width - 8, preserve_newlines=True)
+    blit_text_lines(dst, pygame.Rect(inner.left + 4, inner.top + 2, inner.width - 8, inner.height - 4),
+                    font, lines[:8], color=WHITE, shadow=True, line_gap=1)
 
 
 class TextEditor:
@@ -168,6 +274,7 @@ class TextEditor:
         self.cx = 0
         self.cy = 0
         self.scroll = 0
+        self.hscroll_px = 0
         self.blink = 0
         self.insert_spaces = 4
         self.error_line: int | None = None
@@ -180,6 +287,7 @@ class TextEditor:
         self.cx = 0
         self.cy = 0
         self.scroll = 0
+        self.hscroll_px = 0
         self.error_line = None
 
     def set_error_line(self, line_number: int | None) -> None:
@@ -226,7 +334,7 @@ class TextEditor:
             self.lines[self.cy] = ln[:self.cx] + ev.unicode + ln[self.cx:]
             self.cx += 1
 
-        view_lines = max(1, (self.rect.height - 12) // 14)
+        view_lines = max(1, (self.rect.height - 12) // 16)
         if self.cy < self.scroll:
             self.scroll = self.cy
         if self.cy >= self.scroll + view_lines:
@@ -237,20 +345,43 @@ class TextEditor:
         inner = self.rect.inflate(-4, -4)
         pygame.draw.rect(dst, (10, 10, 14), inner)
 
+        # Clip all drawing to the editor inner rect so text never leaks outside the panel.
+        prev_clip = dst.get_clip()
+        dst.set_clip(inner)
+
         keywords = {"def", "for", "if", "else", "elif", "return", "in", "range", "len", "int", "float", "str", "True", "False"}
+        lh = max(12, font.get_linesize())
         y = inner.top + 2
         x0 = inner.left + 4
-        lh = 14
-        view_lines = max(1, inner.height // lh)
-        start = self.scroll
-        end = min(len(self.lines), start + view_lines)
+        visible_w = max(10, inner.width - 8)
 
-        for i in range(start, end):
+        # --- Horizontal scroll so long lines stay readable inside the box ---
+        cursor_px = font.size(self.lines[self.cy][: self.cx])[0]
+        # Keep cursor in view (leave a small margin on the right)
+        if (cursor_px - self.hscroll_px) > (visible_w - 6):
+            self.hscroll_px = max(0, cursor_px - (visible_w - 6))
+        elif (cursor_px - self.hscroll_px) < 0:
+            self.hscroll_px = max(0, cursor_px)
+
+        # Clamp hscroll to the longest visible line (prevents drifting too far right)
+        longest = 0
+        for ln in self.lines[max(0, self.cy - 2) : min(len(self.lines), self.cy + 3)]:
+            longest = max(longest, font.size(ln)[0])
+        self.hscroll_px = min(self.hscroll_px, max(0, longest - visible_w + 6))
+
+        view_lines = max(1, inner.height // lh)
+        start_ln = self.scroll
+        end_ln = min(len(self.lines), start_ln + view_lines)
+
+        max_x = inner.right - 4
+
+        for i in range(start_ln, end_ln):
             ln = self.lines[i]
             if self.error_line is not None and i + 1 == self.error_line:
                 hl = pygame.Rect(inner.left + 1, y - 1, inner.width - 2, lh)
                 pygame.draw.rect(dst, (110, 34, 40), hl)
-            x = x0
+
+            x = (x0 - self.hscroll_px)
             for token in re.split(r"(\W)", ln):
                 if token == "":
                     continue
@@ -259,14 +390,30 @@ class TextEditor:
                     col = (255, 220, 120)
                 elif token.startswith("#"):
                     col = (120, 180, 120)
+
                 t = font.render(token, False, col)
+                tw = t.get_width()
+
+                # If we are fully left of the visible region, advance without drawing.
+                if x + tw < x0:
+                    x += tw
+                    continue
+
+                # Stop at the right edge.
+                if x >= max_x or (x + tw) > max_x:
+                    break
+
                 dst.blit(t, (x, y))
-                x += t.get_width()
+                x += tw
+
             y += lh
 
+        # Caret
         self.blink = (self.blink + 1) % 60
         if self.blink < 30:
             cur_y = inner.top + 2 + (self.cy - self.scroll) * lh
-            cur_x = x0 + font.size(self.lines[self.cy][: self.cx])[0]
+            cur_x = (x0 - self.hscroll_px) + cursor_px
             if inner.top <= cur_y <= inner.bottom - lh:
                 pygame.draw.rect(dst, OFF_WHITE, pygame.Rect(cur_x, cur_y + 2, 2, lh - 4))
+
+        dst.set_clip(prev_clip)
