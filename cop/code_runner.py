@@ -1,9 +1,10 @@
-\
 from __future__ import annotations
 
 import sys
+import traceback
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict
+
 
 @dataclass
 class RunResult:
@@ -11,16 +12,41 @@ class RunResult:
     error: str | None = None
     lines_executed: int = 0
     used_hint: bool = False
+    error_line: int | None = None
+
 
 class StepLimit(Exception):
     pass
+
+
+def _friendly_error(err: BaseException) -> str:
+    name = type(err).__name__
+    msg = str(err)
+    if name == "SyntaxError":
+        return f"SyntaxError: {msg}"
+    if name == "NameError":
+        return f"NameError: {msg}. Tip: define the variable before using it."
+    if name == "TypeError":
+        return f"TypeError: {msg}. Tip: check function arguments and value types."
+    return f"{name}: {msg}"
+
+
+def _extract_error_line(err: BaseException) -> int | None:
+    if isinstance(err, SyntaxError):
+        return err.lineno
+    tb = err.__traceback__
+    frames = traceback.extract_tb(tb)
+    for frame in reversed(frames):
+        if frame.filename == "<string>":
+            return frame.lineno
+    return None
+
 
 def run_player_code(code: str, env: Dict[str, Any], *, line_limit: int = 8000) -> RunResult:
     """
     Executes player code with:
     - restricted builtins (no imports)
     - sys.settrace line counter (kills runaway loops)
-    Note: This is an MVP sandbox, not a hardened security boundary.
     """
     counter = {"lines": 0}
 
@@ -57,6 +83,11 @@ def run_player_code(code: str, env: Dict[str, Any], *, line_limit: int = 8000) -
     except StepLimit as e:
         return RunResult(ok=False, error=str(e), lines_executed=counter["lines"])
     except Exception as e:
-        return RunResult(ok=False, error=f"{type(e).__name__}: {e}", lines_executed=counter["lines"])
+        return RunResult(
+            ok=False,
+            error=_friendly_error(e),
+            lines_executed=counter["lines"],
+            error_line=_extract_error_line(e),
+        )
     finally:
         sys.settrace(None)

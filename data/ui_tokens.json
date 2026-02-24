@@ -1,0 +1,38 @@
+{
+  "spacing": {
+    "u": 8,
+    "panel_padding": 8,
+    "panel_inset": 4,
+    "button_padding_x": 8,
+    "button_padding_y": 4,
+    "gap_small": 8,
+    "gap_medium": 16,
+    "gap_large": 24
+  },
+  "line": {
+    "frame": 2,
+    "inset": 1
+  },
+  "shadow": {
+    "x": 1,
+    "y": 1
+  },
+  "colors": {
+    "background_primary": "#16529F",
+    "panel_primary": "#1C223E",
+    "panel_shadow": "#0B2F5D",
+    "text_primary": "#FDFEFD",
+    "text_secondary": "#EEDEA8",
+    "action_primary": "#E4B231",
+    "action_primary_highlight": "#E4BA4F",
+    "action_primary_shadow": "#7E6A3C",
+    "warning": "#D62936",
+    "outline": "#0F0F12"
+  },
+  "usage_rules": {
+    "primary_action": "Use gold for PLAY/RUN/CONTINUE style actions.",
+    "warning": "Use red only for errors and warning toasts.",
+    "text": "Use off-white for helper text, white for primary labels.",
+    "background": "Use Casa Blue for screen backgrounds and navy for panel interiors."
+  }
+}
