@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from typing import Optional, Callable
 
 from .constants import LOGICAL_W, LOGICAL_H, U, FPS, CASA_BLUE, NAVY_DEEP, WHITE, OFF_WHITE, OUTLINE_BLACK
-from .ui import Button, panel, toast, progress_bar, TextEditor
+from .ui import Button, panel, toast, progress_bar, TextEditor, header_bar
 from .band import Band
 from .code_runner import run_player_code
-from .save import SaveSlot, load_slot, write_slot, delete_slot
+from .save import SaveSlot, load_slot, write_slot, delete_slot, save_level_code
 from .levels import Level
 
 def compute_viewport(logical: pygame.Surface, window: pygame.Surface) -> tuple[int,int,int,int,int]:
@@ -68,11 +68,6 @@ class TitleScene(Scene):
 
     def _draw_branding(self, dst: pygame.Surface) -> None:
         """Draw title, logo, and helper copy with stable non-overlapping layout."""
-        title = self.game.assets.font_l.render("CODE OF PRIDE", False, WHITE)
-        sh = self.game.assets.font_l.render("CODE OF PRIDE", False, OUTLINE_BLACK)
-        dst.blit(sh, (LOGICAL_W//2 - title.get_width()//2 + 1, 3))
-        dst.blit(title, (LOGICAL_W//2 - title.get_width()//2, 2))
-
         if self.game.assets.logo:
             logo = self.game.assets.logo
             target_h = 84
@@ -93,9 +88,7 @@ class TitleScene(Scene):
 
     def draw(self, dst: pygame.Surface) -> None:
         dst.fill(CASA_BLUE)
-        # Header
-        pygame.draw.rect(dst, OUTLINE_BLACK, pygame.Rect(0,0,LOGICAL_W,24), 0)
-        pygame.draw.rect(dst, NAVY_DEEP, pygame.Rect(0,0,LOGICAL_W,24), 0)
+        header_bar(dst, pygame.Rect(0, 0, LOGICAL_W, 24), "CODE OF PRIDE", self.game.assets.font_l)
         self._draw_branding(dst)
 
         # Stable button layout below the title copy.
@@ -225,10 +218,7 @@ class CampaignHubScene(Scene):
 
     def draw(self, dst: pygame.Surface) -> None:
         dst.fill(CASA_BLUE)
-        # Header
-        pygame.draw.rect(dst, NAVY_DEEP, pygame.Rect(0,0,LOGICAL_W,24))
-        title = self.game.assets.font_m.render("SEASON SCHEDULE", False, WHITE)
-        dst.blit(title, (LOGICAL_W//2 - title.get_width()//2, 6))
+        header_bar(dst, pygame.Rect(0, 0, LOGICAL_W, 24), "SEASON SCHEDULE", self.game.assets.font_m)
 
         # Top progress
         if self.game.current_save:
@@ -310,61 +300,26 @@ class LevelScene(Scene):
         self.field_rect = pygame.Rect(200, 40, 168, 112)
         starter = "# Sandbox: write code to move marchers.\n" if sandbox else (level.starter_code if level else "")
         self.editor = TextEditor(self.editor_rect, starter)
+        if self.game.current_save:
+            saved = self.game.current_save.code_by_level.get(self._level_code_key())
+            if saved:
+                self.editor.set_text(saved)
 
         self.toast_pre = level.dialogue_pre if level else ("Sandbox mode: experiment freely.")
         self.toast_post = None
 
         self._load_level()
 
-    def _timeline_total_counts(self) -> int:
-        # timeline includes snapshot[0] as initial state
-        return max(0, len(self.timeline) - 1)
+    def _level_code_key(self) -> str:
+        if self.sandbox:
+            return "sandbox"
+        return f"week_{self.level.week}" if self.level else "unknown"
 
-    def _clamp_timeline_i(self, i: int) -> int:
-        return max(0, min(int(i), self._timeline_total_counts()))
-
-    def _set_timeline_i(self, i: int) -> None:
-        if not self.timeline:
+    def _autosave_code(self) -> None:
+        if not self.game.current_save:
             return
-        self.timeline_i = self._clamp_timeline_i(i)
-        self.band.apply_snapshot(self.timeline[self.timeline_i])
-
-    def _count_from_timeline_pos(self, pos: tuple[int,int]) -> int | None:
-        if not self.timeline:
-            return None
-        inner = self.timeline_rect.inflate(-8, -8)
-        if not inner.collidepoint(pos):
-            return None
-        total = self._timeline_total_counts()
-        if total <= 0:
-            return 0
-        x = max(inner.left, min(pos[0], inner.right))
-        r = (x - inner.left) / max(1, (inner.width - 1))
-        return int(round(r * total))
-
-    def _set_markers_from_queue(self) -> None:
-        # Mark set boundaries from the scheduled action queue.
-        # Boundaries include 0 and final count.
-        total = self._timeline_total_counts()
-        marks = [0]
-        c = 0
-        for act in getattr(self.band, 'queue', []):
-            c += int(getattr(act, 'counts', 0))
-            if c <= total:
-                marks.append(c)
-        if total not in marks:
-            marks.append(total)
-        self.marker_counts = sorted(set(marks))
-
-    def _current_set_index(self) -> int:
-        # 1-based set index based on marker boundaries
-        if not self.marker_counts:
-            return 1
-        i = 0
-        for k in range(len(self.marker_counts)):
-            if self.timeline_i >= self.marker_counts[k]:
-                i = k
-        return i + 1
+        save_level_code(self.game.save_dir, self.game.current_save, self._level_code_key(), self.editor.get_text())
+        self.game.toast_msg = "Saved rehearsal code"
 
     def _load_level(self) -> None:
         self.band.entities.clear()
@@ -490,9 +445,11 @@ class LevelScene(Scene):
         result = run_player_code(self.editor.get_text(), env)
         if not result.ok:
             self.error = result.error
+            self.editor.set_error_line(result.error_line)
             if self.game.current_save and not self.sandbox:
                 self.game.current_save.streak = 0
                 write_slot(self.game.save_dir, self.game.current_save)
+            self._autosave_code()
             return
 
         # Build playback timeline, then animate it in update()
@@ -506,6 +463,8 @@ class LevelScene(Scene):
         self._set_markers_from_queue()
         self.playing = True
         self.error = None
+        self.editor.set_error_line(None)
+        self._autosave_code()
 
     def _reset(self) -> None:
         self.used_hint = False
@@ -524,10 +483,12 @@ class LevelScene(Scene):
         self.editor.lines.append(f"# HINT: {self.level.hint_text}")
         self.editor.cy = len(self.editor.lines)-1
         self.editor.cx = len(self.editor.lines[-1])
+        self._autosave_code()
 
     def handle(self, ev: pygame.event.Event) -> None:
         if ev.type == pygame.KEYDOWN:
             if ev.key == pygame.K_ESCAPE:
+                self._autosave_code()
                 self.game.pop()
                 return
             mod = pygame.key.get_mods()
@@ -554,6 +515,7 @@ class LevelScene(Scene):
                 return
             # editor typing
             self.editor.handle_key(ev)
+            self._autosave_code()
 
         if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
             # Timeline scrub has priority (works even during playback)
@@ -569,7 +531,9 @@ class LevelScene(Scene):
             if self.btn_run.hit(ev.pos): self._run()
             elif self.btn_reset.hit(ev.pos): self._reset()
             elif self.btn_hint.hit(ev.pos): self._hint()
-            elif self.btn_back.hit(ev.pos): self.game.pop()
+            elif self.btn_back.hit(ev.pos):
+                self._autosave_code()
+                self.game.pop()
 
         if ev.type == pygame.MOUSEMOTION and self.scrub_drag:
             c = self._count_from_timeline_pos(ev.pos)
@@ -582,11 +546,9 @@ class LevelScene(Scene):
     def draw(self, dst: pygame.Surface) -> None:
         dst.fill(CASA_BLUE)
 
-        # Header
-        pygame.draw.rect(dst, NAVY_DEEP, pygame.Rect(0,0,LOGICAL_W,24))
         header = "SANDBOX" if self.sandbox else f"WEEK {self.level.week}: {self.level.title}"
-        txt = self.game.assets.font_m.render(header, False, WHITE)
-        dst.blit(txt, (LOGICAL_W//2 - txt.get_width()//2, 6))
+        right = f"PP {self.game.current_save.pride_points}" if self.game.current_save else None
+        header_bar(dst, pygame.Rect(0, 0, LOGICAL_W, 24), header, self.game.assets.font_m, right_text=right)
 
         # Panels
         panel(dst, pygame.Rect(16, 32, 168, 136), "CODE", self.game.assets.font_s)
@@ -641,52 +603,21 @@ class LevelScene(Scene):
         self.btn_hint.draw(dst, self.game.assets.font_s, self.btn_hint.rect.collidepoint((mx,my)))
         self.btn_back.draw(dst, self.game.assets.font_s, self.btn_back.rect.collidepoint((mx,my)))
 
-        # Status strip (objective / errors)
-        status_r = pygame.Rect(16, 152, 352, 16)
-        pygame.draw.rect(dst, OUTLINE_BLACK, status_r, 2)
-        s_in = status_r.inflate(-4, -4)
-        pygame.draw.rect(dst, NAVY_DEEP, s_in)
-        if self.error:
-            msg = self.error
-            t = self.game.assets.font_s.render(msg, False, (240, 120, 120))
-        elif self.pass_state and self.toast_post:
-            t = self.game.assets.font_s.render(f"PASS: {self.toast_post}", False, OFF_WHITE)
-        else:
-            t = self.game.assets.font_s.render(self._objective_text(), False, OFF_WHITE)
-        dst.blit(t, (status_r.left + 6, status_r.top + 4))
+        panel(dst, pygame.Rect(16, 156, 352, 12), None, self.game.assets.font_s)
+        objective = self.game.assets.font_s.render(self._objective_text(), False, OFF_WHITE)
+        dst.blit(objective, (20, 158))
 
-        # Timeline (counts + set markers + playhead)
-        tr = self.timeline_rect
-        pygame.draw.rect(dst, OUTLINE_BLACK, tr, 2)
-        ti = tr.inflate(-4, -4)
-        pygame.draw.rect(dst, NAVY_DEEP, ti)
-        pygame.draw.rect(dst, (11, 47, 93), ti, 1)
-        total = self._timeline_total_counts()
-        # Track line
-        track = tr.inflate(-10, -12)
-        track_y = track.centery
-        pygame.draw.line(dst, OFF_WHITE, (track.left, track_y), (track.right, track_y), 1)
-        # Markers
-        if total > 0 and self.marker_counts:
-            for c in self.marker_counts:
-                x = track.left + int((track.width - 1) * (c / total))
-                pygame.draw.rect(dst, OFF_WHITE, pygame.Rect(x-2, track_y-6, 4, 4))
-        # Playhead
-        if total > 0:
-            px = track.left + int((track.width - 1) * (self.timeline_i / total))
-        else:
-            px = track.left
-        pygame.draw.line(dst, (228,178,49), (px, ti.top+2), (px, ti.bottom-2), 2)
-        # Labels
-        left = self.game.assets.font_s.render("COUNTS", False, OFF_WHITE)
-        dst.blit(left, (tr.left + 6, tr.top + 6))
+        panel(dst, pygame.Rect(16, 170, 352, 14), None, self.game.assets.font_s)
+        count_label = self.game.assets.font_m.render("COUNTS", False, OFF_WHITE)
+        dst.blit(count_label, (20, 171))
         if self.timeline:
-            set_i = self._current_set_index()
-            right_text = f"SET {set_i}  {self.timeline_i}/{total}"
-        else:
-            right_text = "RUN to generate timeline"
-        right = self.game.assets.font_s.render(right_text, False, OFF_WHITE)
-        dst.blit(right, (tr.right - right.get_width() - 6, tr.top + 6))
+            pct = min(1.0, self.timeline_i / max(1, len(self.timeline) - 1))
+            progress_bar(dst, pygame.Rect(20, 172, 344, 10), pct, f"SET {self.timeline_i}/{max(0, len(self.timeline)-1)}", self.game.assets.font_s)
+
+        if self.error:
+            toast(dst, pygame.Rect(16, 142, 352, 14), self.error, self.game.assets.font_s, danger=True)
+        elif self.pass_state and self.toast_post:
+            toast(dst, pygame.Rect(16, 142, 352, 14), f"PASS: {self.toast_post}", self.game.assets.font_s)
 
 class ScoreScene(Scene):
     def __init__(self, game: "Game", total: int, base: int, eff: int, clean: int, streak: int, hint: int):
