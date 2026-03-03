@@ -14,6 +14,7 @@ class Assets:
         self.font_m = None
         self.font_l = None
         self.font_code = None
+        self.font_code_s = None
 
     def load(self) -> None:
         """
@@ -23,15 +24,21 @@ class Assets:
         - consistent line height (use font.get_linesize())
         """
         # Use system monospace if available for code, fall back to default.
-        # NOTE: We still render with antialias=False everywhere for crisp edges.
-        self.font_s = pygame.font.Font(None, 16)   # body
-        self.font_m = pygame.font.Font(None, 20)   # headings/buttons
-        self.font_l = pygame.font.Font(None, 32)   # big titles
+        # NOTE: UI now renders with antialias=True for readability (especially when scaled).
+        self.font_s = pygame.font.Font(None, 18)   # body
+        self.font_m = pygame.font.Font(None, 24)   # headings/buttons
+        self.font_l = pygame.font.Font(None, 40)   # big titles
 
         try:
-            self.font_code = pygame.font.SysFont("Consolas", 16)
+            self.font_code = pygame.font.SysFont("Consolas", 18)
         except Exception:
-            self.font_code = pygame.font.Font(None, 16)
+            self.font_code = pygame.font.Font(None, 18)
+
+
+        try:
+            self.font_code_s = pygame.font.SysFont("Consolas", 14)
+        except Exception:
+            self.font_code_s = pygame.font.Font(None, 14)
 
         logo_path = os.path.join(self.base_dir, "assets", "cgu_cougar_logo.png")
         if os.path.exists(logo_path):

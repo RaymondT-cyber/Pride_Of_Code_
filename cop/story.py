@@ -53,3 +53,97 @@ WEEK1_LESSON = [
         "You must set the right numbers and make it work."
     ),
 ]
+# Week 2: Loops + intervals (clean sax line)
+WEEK2_BRIEFING = [
+    (
+        "ALEXANDER (SAX)",
+        "Director. Sax section reportin’.\n\n"
+        "We’re the shiny glue between rhythm and melody.\n"
+        "If we’re together, the whole show feels smooth."
+    ),
+    (
+        "ALEXANDER (SAX)",
+        "In jazz, an INTERVAL is the space between notes.\n"
+        "On the field, it’s the space between marchers.\n\n"
+        "Bad spacing looks like bad intonation: instantly obvious."
+    ),
+    (
+        "ALEXANDER (SAX)",
+        "We’re building a clean sax line today.\n\n"
+        "Five winds. Same row. Same gap.\n"
+        "A tight horn section, but… with sneakers."
+    ),
+]
+
+WEEK2_LESSON = [
+    (
+        "ALEXANDER (SAX)",
+        "Lesson: LOOPS.\n\n"
+        "A loop is a chorus you play again.\n"
+        "for i in range(5): means 5 repeats."
+    ),
+    (
+        "ALEXANDER (SAX)",
+        "Lesson: PATTERNS.\n\n"
+        "Start at x0. Add spacing each time.\n"
+        "x = x0 + i * spacing\n\n"
+        "That’s your groove grid."
+    ),
+    (
+        "ALEXANDER (SAX)",
+        "Naming matters.\n\n"
+        "name = f\"W{i+1}\" makes W1, W2, W3…\n"
+        "So your code can talk to each player."
+    ),
+    (
+        "ALEXANDER (SAX)",
+        "Your task: Spawn 5 winds on y=11\n"
+        "starting at x=14, with spacing=2.\n\n"
+        "Same gap. Same feel. Clean line."
+    ),
+]
+
+# Week 1 Battle: Copper Ridge HS
+WEEK1_BATTLE_PRE = [
+    (
+        "LEAH (DRUM MAJOR)",
+        "Director, our first invitational is today.\n"
+        "Copper Ridge HS goes on right before us.\n"
+        "They’re called ‘The Beginners’.",
+    ),
+    (
+        "DIRECTOR VOSS",
+        "Ah, Casa Grande. I’m Director Voss of the Obsidian Regiment.\n"
+        "Just wanted to wish you luck. Copper Ridge is... well, they try.\n"
+        "Let’s see if your kids can at least hit their dots on time.",
+    ),
+    (
+        "JACOB (PERCUSSION)",
+        "Ignore him.\n\n"
+        "Goal: a clean 16-count phrase.\n"
+        "Two distinct moves. Exact timing.\n"
+        "No overshoot.",
+    ),
+]
+
+WEEK1_BATTLE_POST_WIN = [
+    (
+        "LEAH (DRUM MAJOR)",
+        "Forms held. Timing locked.\n"
+        "Copper Ridge didn’t stand a chance.",
+    ),
+    (
+        "DIRECTOR VOSS",
+        "Beginner’s luck.\n"
+        "Enjoy the minor leagues, Director.\n"
+        "I’ll be watching.",
+    ),
+]
+
+WEEK1_BATTLE_POST_LOSS = [
+    (
+        "JACOB (PERCUSSION)",
+        "We drifted. The phrase fell apart.\n\n"
+        "Check the Judge’s sheet, clean the code, and rep it again.",
+    )
+]

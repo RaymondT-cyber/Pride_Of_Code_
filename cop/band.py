@@ -21,7 +21,6 @@ class StepAction:
     t: int = 0  # progressed counts
 
 class Band:
-    """Band API v1: safe, schedule-based calls (player code queues actions; sim executes deterministically)."""
     def __init__(self):
         self.entities: Dict[str, Entity] = {}
         self.queue: List[StepAction] = []

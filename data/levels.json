@@ -1,23 +1,25 @@
 {
   "meta": {
     "title": "CODE OF PRIDE",
-    "season_weeks": 16,
+    "season_weeks": 17,
     "logical_resolution": [
       384,
       216
     ],
     "grid_unit": 8,
-    "default_counts": 8
+    "default_counts": 8,
+    "lessons_per_week": 5
   },
   "levels": [
     {
       "id": 1,
       "week": 1,
-      "title": "First Downbeat",
-      "mentor": "LEAH + JACOB",
-      "dialogue_pre": "LEAH (DM): Set DM's dot using target_x/target_y. Then move in 8 counts.",
-      "hint_text": "JACOB (PERC): counts=8 is our 8-count phrase. Lock it in like a cadence.",
-      "dialogue_post": "LEAH: Same code, same move. That's how we keep the block together.",
+      "lesson": 1,
+      "title": "Week 1 Lesson 1: First Downbeat",
+      "mentor": "LEAH (DM) + JACOB (PERC)",
+      "dialogue_pre": "LEAH (DM): Name the dot. JACOB (PERC): Lock 8 counts.",
+      "hint_text": "LEAH: Set target_x=12 and target_y=11. JACOB: counts=8.",
+      "dialogue_post": "LEAH: Dot hit. JACOB: Time locked. That\u2019s a clean rep.",
       "allowed_api": [
         "step_to",
         "wait"
@@ -26,7 +28,7 @@
         {
           "name": "DM",
           "section": "DM",
-          "x": 5,
+          "x": 4,
           "y": 11
         }
       ],
@@ -34,21 +36,195 @@
         "type": "reach",
         "entity": "DM",
         "target": {
-          "x": 20,
+          "x": 12,
           "y": 11
         },
         "tolerance": 0
       },
-      "starter_code": "# WEEK 1: VARIABLES + COUNTS\n#\n# Build the move using variables.\n# (The lesson explains the structure.)\n\ntarget_x = 0  # TODO: set to the target x\ntarget_y = 0  # TODO: set to the target y\n\n# TODO: move DM using your variables in 8 counts\nband.step_to(\n    \"DM\",\n    target_x,\n    target_y,\n    counts=8,\n)\n"
+      "starter_code": "# WEEK 1 \u2022 LESSON 1: VARIABLES + COUNTS\n# Goal: move DM to (12, 11) in 8 counts\n\n# Leah: write the dot\ntarget_x = 0  # TODO: set to 12\ntarget_y = 0  # TODO: set to 11\n\n# Jacob: call the move on an 8-count phrase\nband.step_to(\n    'DM',\n    target_x,\n    target_y,\n    counts=8,\n)\n",
+      "csta": [
+        "1A-AP-08",
+        "1A-AP-11"
+      ]
     },
     {
       "id": 2,
+      "week": 1,
+      "lesson": 2,
+      "title": "Week 1 Lesson 2: Two-Move Phrase",
+      "mentor": "JACOB (PERC)",
+      "dialogue_pre": "JACOB (PERC): Two phrases. Two hits. Total 16 counts.",
+      "hint_text": "Step DM to (12,11) in 8 counts, then to (20,11) in 8 counts.",
+      "dialogue_post": "JACOB: That split was clean. Two moves, same tempo.",
+      "allowed_api": [
+        "step_to",
+        "wait"
+      ],
+      "start_entities": [
+        {
+          "name": "DM",
+          "section": "DM",
+          "x": 4,
+          "y": 11
+        }
+      ],
+      "objective": {
+        "type": "phrase",
+        "entity": "DM",
+        "requirements": {
+          "total_counts": 16,
+          "min_moves": 2,
+          "must_wait": false,
+          "end": {
+            "x": 20,
+            "y": 11
+          }
+        }
+      },
+      "starter_code": "# WEEK 1 \u2022 LESSON 2: TWO MOVES\n# Build a 16-count phrase for DM using 2 moves.\n\nband.step_to('DM', 12, 11, counts=8)\n# Add your second move here to reach (20, 11)\n",
+      "csta": [
+        "1A-AP-08",
+        "1A-AP-11",
+        "1A-AP-12"
+      ]
+    },
+    {
+      "id": 3,
+      "week": 1,
+      "lesson": 3,
+      "title": "Week 1 Lesson 3: Hold the Set",
+      "mentor": "LEAH (DM)",
+      "dialogue_pre": "LEAH (DM): Sometimes the cleanest move is staying still. Use wait().",
+      "hint_text": "Move DM, then wait(4), then finish the phrase. Total 16 counts.",
+      "dialogue_post": "LEAH: Nice. You held the form instead of wandering.",
+      "allowed_api": [
+        "step_to",
+        "wait"
+      ],
+      "start_entities": [
+        {
+          "name": "DM",
+          "section": "DM",
+          "x": 4,
+          "y": 11
+        }
+      ],
+      "objective": {
+        "type": "phrase",
+        "entity": "DM",
+        "requirements": {
+          "total_counts": 16,
+          "min_moves": 2,
+          "must_wait": true,
+          "end": {
+            "x": 20,
+            "y": 11
+          }
+        }
+      },
+      "starter_code": "# WEEK 1 \u2022 LESSON 3: WAIT (HOLD)\n# Total phrase: 16 counts\n# Must use band.wait() at least once.\n\nband.step_to('DM', 12, 11, counts=8)\n# Leah: hold the set\n# band.wait(4)\n# Finish the phrase to (20, 11)\n",
+      "csta": [
+        "1A-AP-08",
+        "1A-AP-12",
+        "1A-AP-14"
+      ]
+    },
+    {
+      "id": 4,
+      "week": 1,
+      "lesson": 4,
+      "title": "Week 1 Lesson 4: Hit the Mid-Dot",
+      "mentor": "LEAH + JACOB",
+      "dialogue_pre": "LEAH: Hit the mid-dot at count 8. JACOB: Finish on count 16.",
+      "hint_text": "Count 8: DM at (12,11). Count 16: DM at (20,11).",
+      "dialogue_post": "LEAH: That\u2019s control. JACOB: That\u2019s tempo.",
+      "allowed_api": [
+        "step_to",
+        "wait"
+      ],
+      "start_entities": [
+        {
+          "name": "DM",
+          "section": "DM",
+          "x": 4,
+          "y": 11
+        }
+      ],
+      "objective": {
+        "type": "phrase",
+        "entity": "DM",
+        "requirements": {
+          "total_counts": 16,
+          "min_moves": 2,
+          "must_wait": false,
+          "end": {
+            "x": 20,
+            "y": 11
+          },
+          "checkpoints": [
+            {
+              "count": 8,
+              "pos": {
+                "x": 12,
+                "y": 11
+              }
+            }
+          ]
+        }
+      },
+      "starter_code": "# WEEK 1 \u2022 LESSON 4: CLEAN CHECKPOINTS\n# Count 8: hit (12,11)\n# Count 16: hit (20,11)\n\n# Write your 16-count phrase here:\n\n",
+      "csta": [
+        "1A-AP-08",
+        "1A-AP-12",
+        "1A-AP-14"
+      ]
+    },
+    {
+      "id": 5,
+      "week": 1,
+      "lesson": 5,
+      "title": "Week 1 Battle: Invitational vs Copper Ridge",
+      "mentor": "FULL LEADERSHIP",
+      "dialogue_pre": "JACOB: Lock in a 16-count phrase. Two moves. Exact timing.",
+      "hint_text": "LEAH: Step DM to (12,11) in 8 counts, then to (20,11) in 8 counts.",
+      "dialogue_post": "LEAH: Clean reps win shows.",
+      "allowed_api": [
+        "step_to",
+        "wait"
+      ],
+      "start_entities": [
+        {
+          "name": "DM",
+          "section": "DM",
+          "x": 4,
+          "y": 11
+        }
+      ],
+      "objective": {
+        "type": "battle",
+        "opponent": "Copper Ridge HS",
+        "requirements": {
+          "total_counts": 16,
+          "min_moves": 2
+        },
+        "pass_score": 70
+      },
+      "starter_code": "# WEEK 1 BATTLE vs Copper Ridge\n# Build a 16-count phrase for the DM.\n# Must contain at least 2 separate moves.\n\nband.step_to('DM', 12, 11, counts=8)\n# Add your second move here to reach (20, 11)!\n",
+      "opponent_code": "# Copper Ridge is sloppy.\nband.step_to('DM', 20, 11, counts=16)  # One long, boring move.\n",
+      "csta": [
+        "1A-AP-08",
+        "1A-AP-12",
+        "1A-AP-14"
+      ]
+    },
+    {
+      "id": 6,
       "week": 2,
-      "title": "Set the Interval",
-      "mentor": "ALEXANDER",
-      "dialogue_pre": "\u201cIntervals are math. If your line is uneven, the audience sees it instantly.\u201d",
-      "hint_text": "\u201cUse a loop: each marcher\u2019s x changes by the same amount.\u201d",
-      "dialogue_post": "\u201cNice. Your code just taught spacing better than a thousand words.\u201d",
+      "title": "Week 2 Lesson 1: Set the Interval",
+      "mentor": "ALEXANDER (SAX)",
+      "dialogue_pre": "ALEXANDER (SAX): Horn lines look best when the interval is even. Let\u2019s place a clean sax line.",
+      "hint_text": "ALEXANDER (SAX): Use a loop. Each i is a repeat. x = x0 + i*spacing.",
+      "dialogue_post": "ALEXANDER (SAX): Tight horn section. Same gap, same groove.",
       "allowed_api": [
         "step_to",
         "wait",
@@ -64,16 +240,18 @@
         "x_start": 14,
         "dx": 2
       },
-      "starter_code": "y = 11\nx0 = 14\nspacing = 2\nfor i in range(5):\n    name = f'W{i+1}'\n    band.spawn(name, section='WINDS', x=x0 + i*spacing, y=y)\n"
+      "starter_code": "# WEEK 2: LOOPS + INTERVALS\n# Goal: Spawn W1..W5 on y=11 starting at x=14, spacing=2.\n# Fix the spacing, then run.\n\ny = 11\nx0 = 14\nspacing = 0  # TODO: set this to 2\n\nfor i in range(5):\n    name = f\"W{i+1}\"\n    band.spawn(name, section=\"WINDS\", x=x0 + i*spacing, y=y)\n",
+      "lesson": 1,
+      "csta": []
     },
     {
-      "id": 3,
+      "id": 7,
       "week": 3,
-      "title": "Lock the Tempo",
-      "mentor": "DIEGO + DOMINIC",
-      "dialogue_pre": "\u201cWe move on time, not when we feel like it.\u201d",
-      "hint_text": "\u201cUse wait() so sections don\u2019t drift out of phase.\u201d",
-      "dialogue_post": "\u201cThat\u2019s ensemble timing. Keep the grid honest.\u201d",
+      "title": "Week 3 Lesson 1: Lock the Tempo",
+      "mentor": "JACOB (PERC) + DOMINIC (LOW BRASS)",
+      "dialogue_pre": "JACOB (PERC): We move on the click, not on vibes. Set your counts like a metronome.",
+      "hint_text": "DOMINIC (LOW BRASS): Use wait() to hold the pocket. Then move the next phrase on time.",
+      "dialogue_post": "JACOB (PERC): That was a clean split. No rushing, no dragging.",
       "allowed_api": [
         "step_to",
         "wait",
@@ -112,16 +290,18 @@
         "perc_hold_counts": 4,
         "winds_move_counts": 4
       },
-      "starter_code": "band.step_to('W1', 16, 13, counts=4)\nband.step_to('W2', 16, 15, counts=4)\n# Percussion holds\nband.wait(4)\n# Swap: winds hold, percussion moves\nband.step_to('P1', 16, 7, counts=4)\nband.step_to('P2', 16, 9, counts=4)\n"
+      "starter_code": "band.step_to('W1', 16, 13, counts=4)\nband.step_to('W2', 16, 15, counts=4)\n# Percussion holds\nband.wait(4)\n# Swap: winds hold, percussion moves\nband.step_to('P1', 16, 7, counts=4)\nband.step_to('P2', 16, 9, counts=4)\n",
+      "lesson": 1,
+      "csta": []
     },
     {
-      "id": 4,
+      "id": 8,
       "week": 4,
-      "title": "Dynamic Decision",
-      "mentor": "KYLE",
-      "dialogue_pre": "\u201cPower is useless if we collide. Make a call.\u201d",
-      "hint_text": "\u201cIf the path is crowded, take more counts.\u201d",
-      "dialogue_post": "\u201cThat\u2019s leadership: adapt without panicking.\u201d",
+      "title": "Week 4 Lesson 1: Dynamic Decision",
+      "mentor": "KYLE (HIGH BRASS)",
+      "dialogue_pre": "KYLE (HIGH BRASS): Power is useless if we collide. Make the smart call and keep the form clean.",
+      "hint_text": "KYLE (HIGH BRASS): If the lane is crowded, take more counts or go around.",
+      "dialogue_post": "KYLE (HIGH BRASS): That is leadership: adapt without panicking.",
       "allowed_api": [
         "step_to",
         "wait",
@@ -159,16 +339,18 @@
         },
         "obstacle": "X"
       },
-      "starter_code": "tx, ty = 16, 11\n# If the direct path is blocked, go around\nif band.is_occupied(10, 11):\n    band.step_to('B1', 10, 9, counts=4)\n    band.step_to('B1', tx, ty, counts=4)\nelse:\n    band.step_to('B1', tx, ty, counts=8)\n"
+      "starter_code": "tx, ty = 16, 11\n# If the direct path is blocked, go around\nif band.is_occupied(10, 11):\n    band.step_to('B1', 10, 9, counts=4)\n    band.step_to('B1', tx, ty, counts=4)\nelse:\n    band.step_to('B1', tx, ty, counts=8)\n",
+      "lesson": 1,
+      "csta": []
     },
     {
-      "id": 5,
+      "id": 9,
       "week": 5,
-      "title": "Visual Phrase",
-      "mentor": "ANNA + MYLEE",
-      "dialogue_pre": "\u201cMusic has phrases. So should drill.\u201d",
-      "hint_text": "\u201cWrap your move into a function, then reuse it.\u201d",
-      "dialogue_post": "\u201cNow we can build a whole show from a few good ideas.\u201d",
+      "title": "Week 5 Lesson 1: Visual Phrase",
+      "mentor": "ANNA (FLUTE) + MYLEE (GUARD)",
+      "dialogue_pre": "ANNA (FLUTE): Music has phrases. So should drill. Build a move once, then reuse it.",
+      "hint_text": "MYLEE (GUARD): Wrap the arc into a function. Then the whole line can sweep together.",
+      "dialogue_post": "ANNA (FLUTE): Nice. Now we can build a whole show from a few good ideas.",
       "allowed_api": [
         "step_to",
         "wait",
@@ -210,7 +392,9 @@
         "radius": 4,
         "counts": 8
       },
-      "starter_code": "import math  # blocked (use band.math)\n\n# Make an arc helper built from step_to()\ndef arc_out(names, cx, cy, radius, start_deg, end_deg, counts):\n    for i, name in enumerate(names):\n        t = i / max(1, (len(names)-1))\n        a = band.math.radians(start_deg + (end_deg-start_deg)*t)\n        x = int(round(cx + band.math.cos(a)*radius))\n        y = int(round(cy + band.math.sin(a)*radius))\n        band.step_to(name, x, y, counts=counts)\n\narc_out(['G1','G2','G3'], cx=14, cy=11, radius=4, start_deg=200, end_deg=340, counts=8)\n"
+      "starter_code": "# WEEK 5: FUNCTIONS (PHRASES)\n#\n# Imports are blocked in the game sandbox.\n# Use band.math for trig (sin/cos/radians).\n\n\n# Make an arc helper built from step_to()\ndef arc_out(names, cx, cy, radius, start_deg, end_deg, counts):\n    for i, name in enumerate(names):\n        t = i / max(1, (len(names)-1))\n        a = band.math.radians(start_deg + (end_deg-start_deg)*t)\n        x = int(round(cx + band.math.cos(a)*radius))\n        y = int(round(cy + band.math.sin(a)*radius))\n        band.step_to(name, x, y, counts=counts)\n\narc_out(\n    ['G1','G2','G3'],\n    cx=14, cy=11,\n    radius=4,\n    start_deg=200, end_deg=340,\n    counts=8,\n)\n",
+      "lesson": 1,
+      "csta": []
     }
   ]
 }

@@ -8,10 +8,11 @@ from cop.assets import Assets
 from cop.levels import load_levels
 from cop.scenes import Game, TitleScene, present, compute_viewport
 
+
 def main() -> None:
     pygame.init()
     pygame.display.set_caption("Code of Pride (MVP)")
-    window = pygame.display.set_mode((LOGICAL_W*3, LOGICAL_H*3), pygame.RESIZABLE)
+    window = pygame.display.set_mode((LOGICAL_W * 3, LOGICAL_H * 3), pygame.RESIZABLE)
     logical = pygame.Surface((LOGICAL_W, LOGICAL_H))
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -19,18 +20,38 @@ def main() -> None:
     assets.load()
 
     meta, levels = load_levels(os.path.join(base_dir, "data", "levels.json"))
-    level_by_week = {lv.week: lv for lv in levels}
+
+    # Group levels by week, then sort by lesson.
+    levels_by_week: dict[int, list] = {}
+    for lv in levels:
+        levels_by_week.setdefault(int(lv.week), []).append(lv)
+    for w in list(levels_by_week.keys()):
+        levels_by_week[w].sort(key=lambda L: int(getattr(L, "lesson", 1)))
+
+    season_weeks = int(meta.get("season_weeks", 17) or 17)
+    lessons_per_week = int(meta.get("lessons_per_week", 5) or 5)
 
     save_dir = os.path.join(base_dir, "saves")
     os.makedirs(save_dir, exist_ok=True)
 
-    game = Game(window=window, logical=logical, assets=assets, save_dir=save_dir, level_by_week=level_by_week, stack=[])
+    game = Game(
+        window=window,
+        logical=logical,
+        assets=assets,
+        save_dir=save_dir,
+        levels_by_week=levels_by_week,
+        season_weeks=season_weeks,
+        lessons_per_week=lessons_per_week,
+        stack=[],
+    )
+
     game.push(TitleScene(game))
 
     clock = pygame.time.Clock()
 
     while game.running:
         dt = clock.tick(FPS) / 1000.0
+
         # Keep input aligned with the pixel-perfect letterboxed viewport
         scale, xoff, yoff, sw, sh = compute_viewport(logical, window)
         game.view_scale = scale
@@ -41,13 +62,15 @@ def main() -> None:
             if ev.type == pygame.QUIT:
                 game.running = False
                 break
+
             # Remap mouse events to logical coords so buttons are clickable when scaled
             if ev.type in (pygame.MOUSEMOTION, pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP):
-                if hasattr(ev, 'pos'):
+                if hasattr(ev, "pos"):
                     lp = game.to_logical(ev.pos)
                     if lp is None:
                         continue
-                    ev = pygame.event.Event(ev.type, {**ev.dict, 'pos': lp})
+                    ev = pygame.event.Event(ev.type, {**ev.dict, "pos": lp})
+
             game.scene().handle(ev)
 
         game.scene().update(dt)
@@ -55,6 +78,7 @@ def main() -> None:
         present(logical, window)
 
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()

@@ -266,15 +266,15 @@ def toast(dst: pygame.Surface, rect: pygame.Rect, text: str, font: pygame.font.F
 
 
 class TextEditor:
-    """Minimal multi-line editor for the MVP. Not a full IDE (yet)."""
+    """Minimal multi-line editor for the MVP (with mouse scroll + click caret)."""
 
     def __init__(self, rect: pygame.Rect, initial_text: str = ""):
         self.rect = rect
         self.lines = initial_text.splitlines() or [""]
         self.cx = 0
         self.cy = 0
-        self.scroll = 0
-        self.hscroll_px = 0
+        self.scroll = 0              # vertical scroll in lines
+        self.hscroll_px = 0          # horizontal scroll in pixels
         self.blink = 0
         self.insert_spaces = 4
         self.error_line: int | None = None
@@ -293,8 +293,100 @@ class TextEditor:
     def set_error_line(self, line_number: int | None) -> None:
         self.error_line = line_number
 
+    # --------------------------
+    # Layout + scrolling helpers
+    # --------------------------
+
+    def _inner(self) -> pygame.Rect:
+        return self.rect.inflate(-4, -4)
+
+    def _line_h(self, font: pygame.font.Font) -> int:
+        return max(12, font.get_linesize())
+
+    def _view_lines(self, font: pygame.font.Font) -> int:
+        inner = self._inner()
+        lh = self._line_h(font)
+        return max(1, (inner.height - 4) // lh)
+
+    def _clamp_cursor(self) -> None:
+        self.cy = max(0, min(self.cy, len(self.lines) - 1))
+        self.cx = max(0, min(self.cx, len(self.lines[self.cy])))
+
+    def _clamp_vscroll(self, font: pygame.font.Font) -> None:
+        view = self._view_lines(font)
+        max_scroll = max(0, len(self.lines) - view)
+        self.scroll = max(0, min(self.scroll, max_scroll))
+
+    def _ensure_cursor_visible(self, font: pygame.font.Font) -> None:
+        view = self._view_lines(font)
+        if self.cy < self.scroll:
+            self.scroll = self.cy
+        elif self.cy >= self.scroll + view:
+            self.scroll = self.cy - view + 1
+        self._clamp_vscroll(font)
+
+    # --------------------------
+    # Mouse support
+    # --------------------------
+
+    def scroll_by(self, delta_lines: int, font: pygame.font.Font) -> None:
+        self.scroll += int(delta_lines)
+        self._clamp_vscroll(font)
+
+    def hscroll_by(self, delta_px: int, font: pygame.font.Font) -> None:
+        inner = self._inner()
+        visible_w = max(10, inner.width - 8)
+
+        # estimate max horizontal scroll based on longest visible-ish line
+        start = max(0, self.scroll - 2)
+        end = min(len(self.lines), self.scroll + self._view_lines(font) + 2)
+        longest = 0
+        for ln in self.lines[start:end]:
+            longest = max(longest, font.size(ln)[0])
+
+        max_h = max(0, longest - visible_w + 6)
+        self.hscroll_px = max(0, min(self.hscroll_px + int(delta_px), max_h))
+
+    def set_caret_from_mouse(self, pos: tuple[int, int], font: pygame.font.Font) -> None:
+        inner = self._inner()
+        if not inner.collidepoint(pos):
+            return
+
+        lh = self._line_h(font)
+        x0 = inner.left + 4
+        y0 = inner.top + 2
+
+        row = int((pos[1] - y0) // lh)
+        row = max(0, row)
+        line_idx = max(0, min(self.scroll + row, len(self.lines) - 1))
+
+        px = (pos[0] - x0) + self.hscroll_px
+        s = self.lines[line_idx]
+
+        # binary search nearest column by rendered width
+        lo, hi = 0, len(s)
+        best = 0
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            w = font.size(s[:mid])[0]
+            if w <= px:
+                best = mid
+                lo = mid + 1
+            else:
+                hi = mid - 1
+
+        self.cy = line_idx
+        self.cx = best
+        self._clamp_cursor()
+        self._ensure_cursor_visible(font)
+
+    # --------------------------
+    # Keyboard editing
+    # --------------------------
+
     def handle_key(self, ev: pygame.event.Event) -> None:
         self.error_line = None
+
         if ev.key == pygame.K_BACKSPACE:
             if self.cx > 0:
                 ln = self.lines[self.cy]
@@ -307,76 +399,110 @@ class TextEditor:
                 self.lines[self.cy - 1] = prev + cur
                 del self.lines[self.cy]
                 self.cy -= 1
+
         elif ev.key == pygame.K_RETURN:
             ln = self.lines[self.cy]
             left, right = ln[: self.cx], ln[self.cx :]
+
+            # carry indentation to the next line
+            m = re.match(r"[ ]*", ln)
+            indent = m.group(0) if m else ""
+
             self.lines[self.cy] = left
-            self.lines.insert(self.cy + 1, right)
+            self.lines.insert(self.cy + 1, indent + right.lstrip(" "))
             self.cy += 1
-            self.cx = 0
+            self.cx = len(indent)
+
         elif ev.key == pygame.K_TAB:
             ln = self.lines[self.cy]
             ins = " " * self.insert_spaces
             self.lines[self.cy] = ln[:self.cx] + ins + ln[self.cx:]
             self.cx += len(ins)
+
+        elif ev.key == pygame.K_HOME:
+            self.cx = 0
+        elif ev.key == pygame.K_END:
+            self.cx = len(self.lines[self.cy])
+
         elif ev.key == pygame.K_LEFT:
-            self.cx = max(0, self.cx - 1)
+            if self.cx > 0:
+                self.cx -= 1
+            elif self.cy > 0:
+                self.cy -= 1
+                self.cx = len(self.lines[self.cy])
+
         elif ev.key == pygame.K_RIGHT:
-            self.cx = min(len(self.lines[self.cy]), self.cx + 1)
+            if self.cx < len(self.lines[self.cy]):
+                self.cx += 1
+            elif self.cy < len(self.lines) - 1:
+                self.cy += 1
+                self.cx = 0
+
         elif ev.key == pygame.K_UP:
             self.cy = max(0, self.cy - 1)
             self.cx = min(self.cx, len(self.lines[self.cy]))
+
         elif ev.key == pygame.K_DOWN:
             self.cy = min(len(self.lines) - 1, self.cy + 1)
             self.cx = min(self.cx, len(self.lines[self.cy]))
+
         elif ev.unicode and ev.unicode.isprintable():
             ln = self.lines[self.cy]
             self.lines[self.cy] = ln[:self.cx] + ev.unicode + ln[self.cx:]
             self.cx += 1
 
-        view_lines = max(1, (self.rect.height - 12) // 16)
-        if self.cy < self.scroll:
-            self.scroll = self.cy
-        if self.cy >= self.scroll + view_lines:
-            self.scroll = self.cy - view_lines + 1
+        self._clamp_cursor()
+        # vscroll is finalized in draw() or when called by scene with a font.
+
+    # --------------------------
+    # Rendering
+    # --------------------------
 
     def draw(self, dst: pygame.Surface, font: pygame.font.Font) -> None:
         pygame.draw.rect(dst, OUTLINE_BLACK, self.rect, 2)
-        inner = self.rect.inflate(-4, -4)
+        inner = self._inner()
         pygame.draw.rect(dst, (10, 10, 14), inner)
 
-        # Clip all drawing to the editor inner rect so text never leaks outside the panel.
+        # Keep cursor visible with correct metrics
+        self._ensure_cursor_visible(font)
+
         prev_clip = dst.get_clip()
         dst.set_clip(inner)
 
         keywords = {"def", "for", "if", "else", "elif", "return", "in", "range", "len", "int", "float", "str", "True", "False"}
-        lh = max(12, font.get_linesize())
+        lh = self._line_h(font)
         y = inner.top + 2
         x0 = inner.left + 4
         visible_w = max(10, inner.width - 8)
 
-        # --- Horizontal scroll so long lines stay readable inside the box ---
+        # Horizontal scroll: keep cursor visible
         cursor_px = font.size(self.lines[self.cy][: self.cx])[0]
-        # Keep cursor in view (leave a small margin on the right)
         if (cursor_px - self.hscroll_px) > (visible_w - 6):
             self.hscroll_px = max(0, cursor_px - (visible_w - 6))
         elif (cursor_px - self.hscroll_px) < 0:
             self.hscroll_px = max(0, cursor_px)
 
-        # Clamp hscroll to the longest visible line (prevents drifting too far right)
+        # Clamp horizontal scroll to longest nearby line
         longest = 0
         for ln in self.lines[max(0, self.cy - 2) : min(len(self.lines), self.cy + 3)]:
             longest = max(longest, font.size(ln)[0])
         self.hscroll_px = min(self.hscroll_px, max(0, longest - visible_w + 6))
 
-        view_lines = max(1, inner.height // lh)
+        view_lines = self._view_lines(font)
         start_ln = self.scroll
         end_ln = min(len(self.lines), start_ln + view_lines)
-
-        max_x = inner.right - 4
+        max_x = inner.right - 6  # leave space for scrollbar
 
         for i in range(start_ln, end_ln):
             ln = self.lines[i]
+
+            # Soft highlights to guide beginners
+            if i == self.cy:
+                hl_cur = pygame.Rect(inner.left + 1, y - 1, inner.width - 6, lh)
+                pygame.draw.rect(dst, (18, 18, 28), hl_cur)
+            if "TODO" in ln:
+                hl_todo = pygame.Rect(inner.left + 1, y - 1, inner.width - 6, lh)
+                pygame.draw.rect(dst, (50, 45, 18), hl_todo)
             if self.error_line is not None and i + 1 == self.error_line:
                 hl = pygame.Rect(inner.left + 1, y - 1, inner.width - 2, lh)
                 pygame.draw.rect(dst, (110, 34, 40), hl)
@@ -394,12 +520,9 @@ class TextEditor:
                 t = font.render(token, False, col)
                 tw = t.get_width()
 
-                # If we are fully left of the visible region, advance without drawing.
                 if x + tw < x0:
                     x += tw
                     continue
-
-                # Stop at the right edge.
                 if x >= max_x or (x + tw) > max_x:
                     break
 
@@ -408,12 +531,38 @@ class TextEditor:
 
             y += lh
 
-        # Caret
+        # Caret blink
         self.blink = (self.blink + 1) % 60
         if self.blink < 30:
             cur_y = inner.top + 2 + (self.cy - self.scroll) * lh
             cur_x = (x0 - self.hscroll_px) + cursor_px
             if inner.top <= cur_y <= inner.bottom - lh:
                 pygame.draw.rect(dst, OFF_WHITE, pygame.Rect(cur_x, cur_y + 2, 2, lh - 4))
+
+        # Vertical scrollbar
+        max_scroll = max(0, len(self.lines) - view_lines)
+        if max_scroll > 0:
+            track = pygame.Rect(inner.right - 4, inner.top + 2, 3, inner.height - 4)
+            pygame.draw.rect(dst, (40, 40, 50), track)
+            thumb_h = max(10, int(track.height * (view_lines / max(1, len(self.lines)))))
+            frac = self.scroll / max_scroll if max_scroll else 0.0
+            thumb_y = track.top + int((track.height - thumb_h) * frac)
+            thumb = pygame.Rect(track.left, thumb_y, track.width, thumb_h)
+            pygame.draw.rect(dst, OFF_WHITE, thumb)
+
+        # Horizontal scrollbar (shows when content is wider than view)
+        # Reserve space above bottom edge so it doesn't overlap text.
+        longest_all = 0
+        for ln2 in self.lines[start_ln:end_ln]:
+            longest_all = max(longest_all, font.size(ln2)[0])
+        max_h = max(0, longest_all - visible_w + 6)
+        if max_h > 0:
+            htrack = pygame.Rect(inner.left + 2, inner.bottom - 4, inner.width - 8, 3)
+            pygame.draw.rect(dst, (40, 40, 50), htrack)
+            thumb_w = max(12, int(htrack.width * (visible_w / max(1, longest_all + 6))))
+            frac_h = self.hscroll_px / max_h if max_h else 0.0
+            thumb_x = htrack.left + int((htrack.width - thumb_w) * frac_h)
+            hthumb = pygame.Rect(thumb_x, htrack.top, thumb_w, htrack.height)
+            pygame.draw.rect(dst, OFF_WHITE, hthumb)
 
         dst.set_clip(prev_clip)
