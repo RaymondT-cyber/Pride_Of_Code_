@@ -1,23 +1,23 @@
 {
   "meta": {
-    "title": "CODE OF PRIDE",
+    "title": "Pride of Code",
+    "subtitle": "A Marching Band Coding Adventure",
+    "school": "Casa Grande Union High School",
+    "mascot": "Cougars",
     "season_weeks": 17,
-    "logical_resolution": [
-      384,
-      216
-    ],
-    "grid_unit": 8,
-    "default_counts": 8
+    "version": "1.0"
   },
   "levels": [
     {
       "id": 1,
       "week": 1,
-      "title": "Dots & Variables",
-      "mentor": "LEAH (DRUM MAJOR) + JACOB (PERCUSSION)",
-      "dialogue_pre": "LEAH (DM): Welcome to the dotbook. Today you write a dot into variables, then you *call the move*. Syntax: name = number. Then: band.step_to(\"DM\", target_x, target_y, counts=8).",
-      "hint_text": "JACOB (PERC): counts is your metronome. If you set counts = 8, you just wrote an 8-count phrase.",
-      "dialogue_post": "LEAH (DM): Clean. One dot, one arrival. That's how we start getting memorable.",
+      "day": 1,
+      "title": "First Dot",
+      "type": "warmup",
+      "mentor": "LEAH",
+      "dialogue_pre": "Leah: Every show starts with one truth: your dot. Find it.",
+      "hint_text": "A variable stores a number so you can use it by name.\n\nTry setting:\n  x_target = 8\n  y_target = 11\n\nThen call band.step_to() with those names.\nThe gold star on the field shows your target.",
+      "dialogue_post": "Leah: Clean. That's what a dot looks like when you mean it.",
       "allowed_api": [
         "step_to",
         "wait"
@@ -26,328 +26,265 @@
         {
           "name": "DM",
           "section": "DM",
-          "x": 5,
+          "x": 0,
           "y": 11
         }
       ],
       "objective": {
-        "type": "reach",
+        "type": "position",
         "entity": "DM",
-        "target": {
-          "x": 20,
-          "y": 11
-        },
-        "tolerance": 0
+        "target": [
+          8,
+          11
+        ],
+        "label": "March DM to the target dot (8, 11) in 8 counts."
       },
-      "starter_code": "# WEEK 1 \u2022 LESSON 1 (DOTS + VARIABLES + YOUR FIRST CALL)\n#\n# Think like a drum major: you don't guess. You write the dot, then you call it.\n#\n# Python pattern:\n#   variable_name = number\n#\n# Band move pattern:\n#   band.step_to(name, x, y, counts=8)\n#\n# Your target dot today is (20, 11).\n\n# 1) Write the dot into variables\ntarget_x = 0  # TODO: 20\ntarget_y = 0  # TODO: 11\n\n# 2) Set your phrase length\ncounts = 0  # TODO: 8\n\n# 3) Call the move using your variables\nband.step_to(\"DM\", target_x, target_y, counts=counts)\n",
-      "day": 1
-    },
-    {
-      "id": 6,
-      "week": 1,
-      "day": 2,
-      "title": "Two Dots, One Phrase",
-      "mentor": "LEAH (DRUM MAJOR)",
-      "dialogue_pre": "LEAH (DM): Two dots today. But here's the difference: *you* write the calls. Dot A then Dot B. Two phrases. Clean and readable.",
-      "hint_text": "LEAH (DM): Example call: band.step_to(\"DM\", 20, 11, counts=8). Write one for A, then one for B.",
-      "dialogue_post": "LEAH (DM): Nice. You just wrote a mini drill chart: A then B.",
-      "allowed_api": [
-        "step_to",
-        "wait"
-      ],
-      "start_entities": [
-        {
-          "name": "DM",
-          "section": "DM",
-          "x": 5,
-          "y": 11
-        }
-      ],
-      "objective": {
-        "type": "reach",
-        "entity": "DM",
-        "target": {
-          "x": 28,
-          "y": 11
-        },
-        "tolerance": 0
-      },
-      "starter_code": "# WEEK 1 \u2022 LESSON 2 (TWO DOTS, TWO CALLS)\n#\n# Goal: move DM to Dot A, then Dot B.\n# Dot A = (20, 11)\n# Dot B = (28, 11)\n#\n# You are writing the calls today. Copy the pattern, change the variables:\n#   band.step_to(\"DM\", dotA_x, dotA_y, counts=8)\n\n# 1) Store the dots\ndotA_x = 0  # TODO: 20\ndotA_y = 0  # TODO: 11\ndotB_x = 0  # TODO: 28\ndotB_y = 0  # TODO: 11\n\n# 2) TODO: Call Dot A (8 counts)\n\n# 3) TODO: Call Dot B (8 counts)\n"
-    },
-    {
-      "id": 7,
-      "week": 1,
-      "day": 3,
-      "title": "Counts Control",
-      "mentor": "LEAH (DRUM MAJOR) + JACOB (PERCUSSION)",
-      "dialogue_pre": "JACOB (PERC): Counts are the click. You're going to write two moves again, but this time you control the tempo: 4 counts (fast) then 8 counts (steady).",
-      "hint_text": "JACOB (PERC): Set fast_counts = 4 and slow_counts = 8. Then write two step_to calls using counts=fast_counts and counts=slow_counts.",
-      "dialogue_post": "JACOB (PERC): That's tempo discipline. You told the band exactly how long to take.",
-      "allowed_api": [
-        "step_to",
-        "wait"
-      ],
-      "start_entities": [
-        {
-          "name": "DM",
-          "section": "DM",
-          "x": 5,
-          "y": 11
-        }
-      ],
-      "objective": {
-        "type": "reach",
-        "entity": "DM",
-        "target": {
-          "x": 28,
-          "y": 11
-        },
-        "tolerance": 0
-      },
-      "starter_code": "# WEEK 1 \u2022 LESSON 3 (COUNTS CONTROL)\n#\n# Goal: Same dots, different FEEL.\n# Dot A = (20, 11) in 4 counts\n# Dot B = (28, 11) in 8 counts\n\ndotA_x, dotA_y = 20, 11\ndotB_x, dotB_y = 28, 11\n\n# 1) Set your tempos\nfast_counts = 0  # TODO: 4\nslow_counts = 0  # TODO: 8\n\n# 2) TODO: March Dot A using counts=fast_counts\n\n# 3) TODO: March Dot B using counts=slow_counts\n"
-    },
-    {
-      "id": 8,
-      "week": 1,
-      "day": 4,
-      "title": "Phrase + Rest",
-      "mentor": "LEAH (DRUM MAJOR) + JACOB (PERCUSSION)",
-      "dialogue_pre": "LEAH (DM): Now we rehearse like a real ensemble: phrase, breathe, phrase. You will write: step_to A, wait 8, step_to B.",
-      "hint_text": "JACOB (PERC): band.wait(counts=8) is marking time. Put it BETWEEN your two step_to calls.",
-      "dialogue_post": "LEAH (DM): Clean transitions. The space between moves is part of the show.",
-      "allowed_api": [
-        "step_to",
-        "wait"
-      ],
-      "start_entities": [
-        {
-          "name": "DM",
-          "section": "DM",
-          "x": 5,
-          "y": 11
-        }
-      ],
-      "objective": {
-        "type": "reach",
-        "entity": "DM",
-        "target": {
-          "x": 28,
-          "y": 11
-        },
-        "tolerance": 0
-      },
-      "starter_code": "# WEEK 1 \u2022 LESSON 4 (PHRASE + REST + PHRASE)\n#\n# Goal: Move to Dot A (8), WAIT (8), then Dot B (8).\n# Dot A = (20, 11)\n# Dot B = (28, 11)\n\ndotA_x, dotA_y = 20, 11\ndotB_x, dotB_y = 28, 11\n\n# 1) TODO: Step to Dot A (8 counts)\n\n# 2) TODO: Mark time for 8 counts\n\n# 3) TODO: Step to Dot B (8 counts)\n"
-    },
-    {
-      "id": 9,
-      "week": 1,
-      "day": 5,
-      "title": "Week 1 Test: Copper Ridge",
-      "mentor": "LEAH (DRUM MAJOR) + JACOB (PERCUSSION)",
-      "dialogue_pre": "LEAH (DM): Competition rep. You already rehearsed the pattern. Now prove it: Dot A at count 8, Dot B at count 16. No extra moves.",
-      "hint_text": "VOSS (OBSIDIAN): \"How quaint. We call that the *Intro-to-Excellence* set.\"\nVOSS (OBSIDIAN): \"Try not to trip over your own semicolons.\"\nJACOB (PERC): He's performing for the judges. You perform for the click. Two phrases. counts=8 both times.",
-      "dialogue_post": "LEAH (DM): That's a clean rep. Let him be smug. We're building something real.",
-      "allowed_api": [
-        "step_to",
-        "wait"
-      ],
-      "start_entities": [
-        {
-          "name": "DM",
-          "section": "DM",
-          "x": 5,
-          "y": 11
-        }
-      ],
-      "objective": {
-        "type": "battle_week1",
-        "entity": "DM",
-        "hit_a": {
-          "x": 20,
-          "y": 11
-        },
-        "hit_b": {
-          "x": 28,
-          "y": 11
-        },
-        "total_counts": 16
-      },
-      "starter_code": "# WEEK 1 \u2022 TEST (COMPETITION)\n#\n# Copper Ridge is watching.\n# Requirements:\n#   1) Hit Dot A at count 8:  (20, 11)\n#   2) Hit Dot B at count 16: (28, 11)\n#   3) Total counts must be EXACTLY 16 (two 8-count phrases).\n#\n# This is the same pattern you ran all week:\n#   step_to A (8)\n#   step_to B (8)\n\ndotA_x, dotA_y = 20, 11\ndotB_x, dotB_y = 28, 11\n\n# TODO 1) Hit Dot A\n\n# TODO 2) Hit Dot B\n"
+      "starter_code": "# Week 1 · Day 1: First Dot\n# ─────────────────────────────\n# Set the target coordinates below,\n# then march the DM to that dot.\n\nx_target = 0   # ← change this\ny_target = 0   # ← change this\n\nband.step_to(\"DM\", x_target, y_target, counts=8)\n"
     },
     {
       "id": 2,
-      "week": 2,
-      "title": "Set the Interval",
-      "mentor": "ANNA (HIGH WOODWINDS)",
-      "dialogue_pre": "ANNA (HIGH WW): Clean lines come from clean patterns. Use a loop to place a section with even spacing.",
-      "hint_text": "ANNA (HIGH WW): Use spacing=2. Then x = x0 + i*spacing inside the loop.",
-      "dialogue_post": "ANNA (HIGH WW): Nice. When your pattern is right, the whole form reads like music.",
+      "week": 1,
+      "day": 2,
+      "title": "Two Dots",
+      "type": "drill",
+      "mentor": "LEAH",
+      "dialogue_pre": "Leah: One dot is a start. Two dots is a move. That's a show.",
+      "hint_text": "Call band.step_to() twice — once for each dot.\n\nDot A is already filled in for you.\nYour job: find Dot B.\n\nHint: Dot B is further across the field.\nTry x=16, y=11 and watch where the DM lands.",
+      "dialogue_post": "Leah: Two moves, clean landing. You're starting to chart.",
       "allowed_api": [
         "step_to",
-        "wait",
-        "spawn",
-        "set_pos",
-        "get_all"
+        "wait"
       ],
-      "start_entities": [],
+      "start_entities": [
+        {
+          "name": "DM",
+          "section": "DM",
+          "x": 0,
+          "y": 11
+        }
+      ],
       "objective": {
-        "type": "line",
-        "count": 5,
-        "y": 11,
-        "x_start": 14,
-        "dx": 2
+        "type": "position_and_moves",
+        "entity": "DM",
+        "target": [
+          16,
+          11
+        ],
+        "min_moves": 2,
+        "label": "March DM through Dot A then Dot B. Land at (16, 11)."
       },
-      "starter_code": "# WEEK 2: LOOPS + INTERVALS\n# Goal: Spawn W1..W5 on y=11 starting at x=14, spacing=2.\n# Fix the spacing, then run.\n\ny = 11\nx0 = 14\nspacing = 0  # TODO: set this to 2\n\nfor i in range(5):\n    name = f\"W{i+1}\"\n    band.spawn(name, section=\"WINDS\", x=x0 + i*spacing, y=y)\n",
-      "day": 1
+      "starter_code": "# Week 1 · Day 2: Two Dots\n# ─────────────────────────────\n# Move the DM through TWO dots.\n# Dot A is set. You fill in Dot B.\n\ndot_A_x = 8\ndot_A_y = 11\n\ndot_B_x = 0   # ← change this\ndot_B_y = 0   # ← change this\n\nband.step_to(\"DM\", dot_A_x, dot_A_y, counts=8)\nband.step_to(\"DM\", dot_B_x, dot_B_y, counts=8)\n"
     },
     {
       "id": 3,
-      "week": 3,
-      "title": "Lock the Tempo",
-      "mentor": "JACOB (PERC) + DOMINIC (LOW BRASS)",
-      "dialogue_pre": "JACOB (PERC): We move on the click, not on vibes. Set your counts like a metronome.",
-      "hint_text": "DOMINIC (LOW BRASS): Use wait() to hold the pocket. Then move the next phrase on time.",
-      "dialogue_post": "JACOB (PERC): That was a clean split. No rushing, no dragging.",
+      "week": 1,
+      "day": 3,
+      "title": "Feel the Counts",
+      "type": "drill",
+      "mentor": "JACOB",
+      "dialogue_pre": "Jacob: Same distance. Different counts. Feel the difference.",
+      "hint_text": "counts= controls HOW FAST the move happens.\n\ncounts=8  → steady march step (normal speed)\ncounts=4  → quick step (runs, fast exits)\ncounts=16 → slow march (big, powerful moves)\n\nYour job: fill in the two counts values.\nFirst move: 8 counts. Second move: 4 counts.\nTotal should be exactly 12 counts.",
+      "dialogue_post": "Jacob: 8 then 4. That's the difference between a march and a run-off.",
       "allowed_api": [
         "step_to",
-        "wait",
-        "spawn",
-        "set_pos",
-        "get_all"
+        "wait"
       ],
       "start_entities": [
         {
-          "name": "P1",
-          "section": "PERC",
-          "x": 10,
-          "y": 7
-        },
-        {
-          "name": "P2",
-          "section": "PERC",
-          "x": 10,
-          "y": 9
-        },
-        {
-          "name": "W1",
-          "section": "WINDS",
-          "x": 10,
-          "y": 13
-        },
-        {
-          "name": "W2",
-          "section": "WINDS",
-          "x": 10,
-          "y": 15
+          "name": "DM",
+          "section": "DM",
+          "x": 0,
+          "y": 11
         }
       ],
       "objective": {
-        "type": "sync_swap",
-        "perc_hold_counts": 4,
-        "winds_move_counts": 4
+        "type": "timing",
+        "entity": "DM",
+        "target": [
+          12,
+          11
+        ],
+        "total_counts": 12,
+        "min_moves": 2,
+        "label": "Two moves totaling exactly 12 counts. First: 8ct. Second: 4ct."
       },
-      "starter_code": "band.step_to('W1', 16, 13, counts=4)\nband.step_to('W2', 16, 15, counts=4)\n# Percussion holds\nband.wait(4)\n# Swap: winds hold, percussion moves\nband.step_to('P1', 16, 7, counts=4)\nband.step_to('P2', 16, 9, counts=4)\n",
-      "day": 1
+      "starter_code": "# Week 1 · Day 3: Feel the Counts\n# ─────────────────────────────────\n# Same distance, different speeds.\n# Fill in the counts for each move.\n\n# Steady march step\nband.step_to(\"DM\", 8, 11, counts=0)   # ← change counts\n\n# Quick step (half the counts = twice as fast)\nband.step_to(\"DM\", 12, 11, counts=0)  # ← change counts\n"
     },
     {
       "id": 4,
-      "week": 4,
-      "title": "Dynamic Decision",
-      "mentor": "KYLE (HIGH BRASS)",
-      "dialogue_pre": "KYLE (HIGH BRASS): Power is useless if we collide. Make the smart call and keep the form clean.",
-      "hint_text": "KYLE (HIGH BRASS): If the lane is crowded, take more counts or go around.",
-      "dialogue_post": "KYLE (HIGH BRASS): That is leadership: adapt without panicking.",
+      "week": 1,
+      "day": 4,
+      "title": "Move and Hold",
+      "type": "combo",
+      "mentor": "LEAH",
+      "dialogue_pre": "Leah: A phrase isn't just moving. It's moving, then holding your spot.",
+      "hint_text": "band.wait() is mark time — you hold your dot.\n\nA full phrase:\n  1. March to a dot        (step_to)\n  2. Hold position         (wait)\n  3. March to next dot     (step_to)\n\nAll three together should equal exactly 24 counts.\nTry: 8 + 8 + 8 = 24.",
+      "dialogue_post": "Leah: Move, hold, move. That's phrase structure. Remember it.",
       "allowed_api": [
         "step_to",
-        "wait",
-        "spawn",
-        "set_pos",
-        "get_pos",
-        "is_occupied"
+        "wait"
       ],
       "start_entities": [
         {
-          "name": "B1",
-          "section": "BRASS",
-          "x": 8,
-          "y": 11
-        },
-        {
-          "name": "B2",
-          "section": "BRASS",
-          "x": 12,
-          "y": 11
-        },
-        {
-          "name": "X",
-          "section": "OBST",
-          "x": 10,
+          "name": "DM",
+          "section": "DM",
+          "x": 0,
           "y": 11
         }
       ],
       "objective": {
-        "type": "avoid_collision",
-        "entity": "B1",
-        "target": {
-          "x": 16,
-          "y": 11
-        },
-        "obstacle": "X"
+        "type": "phrase",
+        "entity": "DM",
+        "target": [
+          16,
+          11
+        ],
+        "total_counts": 24,
+        "requires_wait": true,
+        "label": "March → Hold → March. 24 total counts. DM ends at (16, 11)."
       },
-      "starter_code": "tx, ty = 16, 11\n# If the direct path is blocked, go around\nif band.is_occupied(10, 11):\n    band.step_to('B1', 10, 9, counts=4)\n    band.step_to('B1', tx, ty, counts=4)\nelse:\n    band.step_to('B1', tx, ty, counts=8)\n",
-      "day": 1
+      "starter_code": "# Week 1 · Day 4: Move and Hold\n# ─────────────────────────────────\n# Build a 3-part phrase:\n#   march → hold → march\n\n# Part 1: march to first dot\nband.step_to(\"DM\", 8, 11, counts=8)\n\n# Part 2: mark time (hold position)\nband.wait(counts=0)   # ← fill in the counts\n\n# Part 3: march to final dot\nband.step_to(\"DM\", 16, 11, counts=0)  # ← fill in the counts\n"
     },
     {
       "id": 5,
-      "week": 5,
-      "title": "Visual Phrase",
-      "mentor": "ANNA (HIGH WW) + MYLEE (LOW WOODWINDS)",
-      "dialogue_pre": "ANNA (HIGH WW): A show has phrases. In code, phrases are functions you can reuse.",
-      "hint_text": "MYLEE (LOW WW): Make the arc helper once, then call it. Smooth transitions, no panic.",
-      "dialogue_post": "ANNA (HIGH WW): That felt musical. Now we can build bigger moments from small, clean ideas.",
+      "week": 1,
+      "day": 5,
+      "title": "Battle: vs Copper Ridge",
+      "type": "battle",
+      "mentor": "LEAH",
+      "dialogue_pre": "Leah: Copper Ridge is clean. But you've been rehearsing. Show them.",
+      "hint_text": "BATTLE RUBRIC:\n  Technique (50): 2+ moves, exactly 16 counts\n  Show Quality (25): DM hits (20, 11)\n  Code Efficiency (15): clean, no extra lines\n  Creativity (10): free points this week!\n\nPlan: Two 8-count moves that end at (20, 11).\nRemember: the 50-yard line is at x=20.",
+      "dialogue_post": "Leah: That's what we needed. Clean show, clean code. Let's build on it.",
       "allowed_api": [
         "step_to",
-        "wait",
-        "spawn",
-        "set_pos",
-        "get_pos"
+        "wait"
       ],
       "start_entities": [
         {
-          "name": "G1",
-          "section": "GUARD",
-          "x": 12,
-          "y": 11
-        },
-        {
-          "name": "G2",
-          "section": "GUARD",
-          "x": 14,
-          "y": 11
-        },
-        {
-          "name": "G3",
-          "section": "GUARD",
-          "x": 16,
+          "name": "DM",
+          "section": "DM",
+          "x": 0,
           "y": 11
         }
       ],
       "objective": {
-        "type": "arc",
-        "entities": [
-          "G1",
-          "G2",
-          "G3"
+        "type": "battle",
+        "entity": "DM",
+        "target": [
+          20,
+          11
         ],
-        "center": {
-          "x": 14,
-          "y": 11
-        },
-        "radius": 4,
-        "counts": 8
+        "total_counts": 16,
+        "min_moves": 2,
+        "opponent": "Copper Ridge HS",
+        "opponent_nickname": "The Beginners",
+        "label": "2 moves · 16 counts · DM ends at (20, 11) · Score 70+ to advance.",
+        "opponent_timeline": [
+          {
+            "DM": [
+              0,
+              11
+            ]
+          },
+          {
+            "DM": [
+              1,
+              11
+            ]
+          },
+          {
+            "DM": [
+              2,
+              11
+            ]
+          },
+          {
+            "DM": [
+              3,
+              11
+            ]
+          },
+          {
+            "DM": [
+              4,
+              11
+            ]
+          },
+          {
+            "DM": [
+              5,
+              11
+            ]
+          },
+          {
+            "DM": [
+              6,
+              11
+            ]
+          },
+          {
+            "DM": [
+              7,
+              11
+            ]
+          },
+          {
+            "DM": [
+              8,
+              11
+            ]
+          },
+          {
+            "DM": [
+              9,
+              11
+            ]
+          },
+          {
+            "DM": [
+              10,
+              11
+            ]
+          },
+          {
+            "DM": [
+              11,
+              11
+            ]
+          },
+          {
+            "DM": [
+              12,
+              11
+            ]
+          },
+          {
+            "DM": [
+              13,
+              11
+            ]
+          },
+          {
+            "DM": [
+              14,
+              11
+            ]
+          },
+          {
+            "DM": [
+              15,
+              11
+            ]
+          },
+          {
+            "DM": [
+              16,
+              11
+            ]
+          }
+        ]
       },
-      "starter_code": "# WEEK 5: FUNCTIONS (PHRASES)\n#\n# Imports are blocked in the game sandbox.\n# Use band.math for trig (sin/cos/radians).\n\n\n# Make an arc helper built from step_to()\ndef arc_out(names, cx, cy, radius, start_deg, end_deg, counts):\n    for i, name in enumerate(names):\n        t = i / max(1, (len(names)-1))\n        a = band.math.radians(start_deg + (end_deg-start_deg)*t)\n        x = int(round(cx + band.math.cos(a)*radius))\n        y = int(round(cy + band.math.sin(a)*radius))\n        band.step_to(name, x, y, counts=counts)\n\narc_out(\n    ['G1','G2','G3'],\n    cx=14, cy=11,\n    radius=4,\n    start_deg=200, end_deg=340,\n    counts=8,\n)\n",
-      "day": 1
+      "starter_code": "# WEEK 1 BATTLE: vs Copper Ridge HS\n# ────────────────────────────────────\n# Requirements:\n#   ✓ At least 2 distinct moves\n#   ✓ Exactly 16 total counts\n#   ✓ DM finishes at (20, 11)\n#\n# The 50-yard line is at x = 20.\n# Plan your phrase below.\n\nband.step_to(\"DM\", 0, 0, counts=0)   # ← move 1\nband.step_to(\"DM\", 0, 0, counts=0)   # ← move 2\n"
     }
   ]
 }
