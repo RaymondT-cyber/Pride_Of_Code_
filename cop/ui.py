@@ -45,6 +45,7 @@ from .constants import (
     GOLD_HILITE,
     GOLD_PRIMARY,
     GOLD_SHADOW,
+    NAVY_MID,
     NAVY_DEEP,
     NAVY_SHADOW,
     OFF_WHITE,
@@ -168,7 +169,8 @@ class Button:
     hotkey: str | None = None
 
     def draw(self, dst: pygame.Surface, font: pygame.font.Font, hovered: bool, pressed: bool = False) -> None:
-        face = GOLD_PRIMARY if self.primary else CASA_BLUE
+        # Secondary buttons use NAVY_MID so they don't disappear into the charcoal background.
+        face = GOLD_PRIMARY if self.primary else NAVY_MID
         hi = GOLD_HILITE if self.primary else OFF_WHITE
         sh = GOLD_SHADOW if self.primary else NAVY_SHADOW
 
@@ -254,7 +256,7 @@ def progress_bar(dst: pygame.Surface, rect: pygame.Rect, pct: float, label: str,
 
 
 def toast(dst: pygame.Surface, rect: pygame.Rect, text: str, font: pygame.font.Font, danger: bool = False) -> None:
-    bg = ALERT_RED if danger else CASA_BLUE
+    bg = ALERT_RED if danger else NAVY_MID
     pygame.draw.rect(dst, OUTLINE_BLACK, rect, int(UI_TOKENS["line"].get("frame", 2)))
     inner = rect.inflate(-4, -4)
     pygame.draw.rect(dst, bg, inner)
@@ -301,7 +303,9 @@ class TextEditor:
         return self.rect.inflate(-4, -4)
 
     def _line_h(self, font: pygame.font.Font) -> int:
-        return max(12, font.get_linesize())
+        # Old builds forced a 12px minimum which made the editor feel "zoomed in" even with small fonts.
+        # Keep a smaller minimum so the terminal can actually show more lines.
+        return max(9, font.get_linesize())
 
     def _view_lines(self, font: pygame.font.Font) -> int:
         inner = self._inner()
@@ -475,6 +479,17 @@ class TextEditor:
         x0 = inner.left + 4
         visible_w = max(10, inner.width - 8)
 
+        # If the current line fits in the viewport, snap horizontal scroll back to 0.
+        # This prevents the "missing first letter" effect when a tiny leftover scroll offset clips the left edge.
+        cur_line_w = font.size(self.lines[self.cy])[0] if (0 <= self.cy < len(self.lines)) else 0
+        if cur_line_w <= (visible_w - 2):
+            self.hscroll_px = 0
+
+        # Also: if the caret is near the left edge, hard-reset horizontal scroll.
+        # (Players shouldn't lose the start of a line while they are typing variable names.)
+        if self.cx <= 2:
+            self.hscroll_px = 0
+
         # Horizontal scroll: keep cursor visible
         cursor_px = font.size(self.lines[self.cy][: self.cx])[0]
         if (cursor_px - self.hscroll_px) > (visible_w - 6):
@@ -495,14 +510,6 @@ class TextEditor:
 
         for i in range(start_ln, end_ln):
             ln = self.lines[i]
-
-            # Soft highlights to guide beginners
-            if i == self.cy:
-                hl_cur = pygame.Rect(inner.left + 1, y - 1, inner.width - 6, lh)
-                pygame.draw.rect(dst, (18, 18, 28), hl_cur)
-            if "TODO" in ln:
-                hl_todo = pygame.Rect(inner.left + 1, y - 1, inner.width - 6, lh)
-                pygame.draw.rect(dst, (50, 45, 18), hl_todo)
             if self.error_line is not None and i + 1 == self.error_line:
                 hl = pygame.Rect(inner.left + 1, y - 1, inner.width - 2, lh)
                 pygame.draw.rect(dst, (110, 34, 40), hl)
@@ -549,20 +556,5 @@ class TextEditor:
             thumb_y = track.top + int((track.height - thumb_h) * frac)
             thumb = pygame.Rect(track.left, thumb_y, track.width, thumb_h)
             pygame.draw.rect(dst, OFF_WHITE, thumb)
-
-        # Horizontal scrollbar (shows when content is wider than view)
-        # Reserve space above bottom edge so it doesn't overlap text.
-        longest_all = 0
-        for ln2 in self.lines[start_ln:end_ln]:
-            longest_all = max(longest_all, font.size(ln2)[0])
-        max_h = max(0, longest_all - visible_w + 6)
-        if max_h > 0:
-            htrack = pygame.Rect(inner.left + 2, inner.bottom - 4, inner.width - 8, 3)
-            pygame.draw.rect(dst, (40, 40, 50), htrack)
-            thumb_w = max(12, int(htrack.width * (visible_w / max(1, longest_all + 6))))
-            frac_h = self.hscroll_px / max_h if max_h else 0.0
-            thumb_x = htrack.left + int((htrack.width - thumb_w) * frac_h)
-            hthumb = pygame.Rect(thumb_x, htrack.top, thumb_w, htrack.height)
-            pygame.draw.rect(dst, OFF_WHITE, hthumb)
 
         dst.set_clip(prev_clip)

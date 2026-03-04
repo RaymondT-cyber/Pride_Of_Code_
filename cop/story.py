@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 # Story and tutorial dialogue.
-# IMPORTANT: All coding instructions are delivered by section leaders.
-# Keep lines short so they wrap cleanly in retro UI.
+# Keep lines short so they wrap cleanly in the retro UI.
 
 INTRO_PAGES = [
     (
         "NARRATOR",
         "Hey! Welcome.\n\n"
         "You’re the new Band Director of the Pride of Code Marching Band.\n"
-        "Time to make this band the greatest.\n\n"
-        "Listen to your team, work together, and build the greatest show ever."
+        "Your job is half music, half logistics… and 100% vibes.\n\n"
+        "Listen to your section leaders, write clean instructions,\n"
+        "and build a show that looks sharp from the cheap seats."
     ),
 ]
 
@@ -18,15 +18,27 @@ INTRO_PAGES = [
 WEEK1_BRIEFING = [
     (
         "LEAH (DRUM MAJOR)",
-        "Director, keeping the band together starts with clarity.\n\n"
-        "On the field we use DOTS: everyone has a precise spot.\n"
-        "In code, we do the same thing by naming the spot."
+        "Director. Welcome to the top of the ladder. 🙂\n\n"
+        "Out there, a shape looks clean because everyone agrees on one truth: their dot.\n"
+        "Not ‘kinda near the 35’. Not ‘about here’. A dot."
+    ),
+    (
+        "LEAH (DRUM MAJOR)",
+        "Code works the same way.\n\n"
+        "When you name something, you pin it down.\n"
+        "No guessing, no ‘close enough’, no marching into traffic cones."
     ),
     (
         "JACOB (PERCUSSION)",
-        "And we move on COUNTS.\n\n"
-        "Think of counts like a cadence: everyone locks in together.\n"
-        "In code, counts are a number we pass into the move."
+        "And timing is the other half.\n\n"
+        "If you tell the front ensemble ‘move sometime soon’, we revolt.\n"
+        "Counts are the contract: 8 means 8. Everyone lands together."
+    ),
+    (
+        "JACOB (PERCUSSION)",
+        "So today is simple:\n"
+        "Pick the dot. Set the counts. Move clean.\n\n"
+        "Let’s make the field look like it’s snapping to a grid."
     ),
 ]
 
@@ -34,25 +46,27 @@ WEEK1_LESSON = [
     (
         "LEAH (DRUM MAJOR)",
         "Lesson: VARIABLES.\n\n"
-        "A variable is like writing a dot on a card.\n"
-        "Instead of shouting the coordinates every time,\n"
-        "you store them once and reuse them."
+        "A variable is a name taped to a clipboard.\n"
+        "Once it’s written down, you stop re-explaining it every rep.\n\n"
+        "x_target and y_target beat ‘that spot over there’ every time."
     ),
     (
         "JACOB (PERCUSSION)",
         "Lesson: COUNTS.\n\n"
-        "counts=8 means an 8-count phrase.\n"
-        "If the band moves in 8, the band arrives in 8.\n"
-        "No drifting, no guessing."
+        "counts = 8 is an 8-count phrase.\n"
+        "Not faster because you feel brave. Not slower because it’s hot.\n\n"
+        "When the number is right, the move feels right."
     ),
     (
         "LEAH + JACOB",
-        "Your task: Move the Drum Major (DM) to the target dot\n"
+        "Your task:\n"
+        "Move the Drum Major (DM) to the target dot\n"
         "in exactly 8 counts.\n\n"
-        "You’ll get the structure.\n"
-        "You must set the right numbers and make it work."
+        "You’ll get a starter script.\n"
+        "You set the numbers and make the move land."
     ),
 ]
+
 # Week 2: Loops + intervals (clean sax line)
 WEEK2_BRIEFING = [
     (
@@ -101,49 +115,4 @@ WEEK2_LESSON = [
         "starting at x=14, with spacing=2.\n\n"
         "Same gap. Same feel. Clean line."
     ),
-]
-
-# Week 1 Battle: Copper Ridge HS
-WEEK1_BATTLE_PRE = [
-    (
-        "LEAH (DRUM MAJOR)",
-        "Director, our first invitational is today.\n"
-        "Copper Ridge HS goes on right before us.\n"
-        "They’re called ‘The Beginners’.",
-    ),
-    (
-        "DIRECTOR VOSS",
-        "Ah, Casa Grande. I’m Director Voss of the Obsidian Regiment.\n"
-        "Just wanted to wish you luck. Copper Ridge is... well, they try.\n"
-        "Let’s see if your kids can at least hit their dots on time.",
-    ),
-    (
-        "JACOB (PERCUSSION)",
-        "Ignore him.\n\n"
-        "Goal: a clean 16-count phrase.\n"
-        "Two distinct moves. Exact timing.\n"
-        "No overshoot.",
-    ),
-]
-
-WEEK1_BATTLE_POST_WIN = [
-    (
-        "LEAH (DRUM MAJOR)",
-        "Forms held. Timing locked.\n"
-        "Copper Ridge didn’t stand a chance.",
-    ),
-    (
-        "DIRECTOR VOSS",
-        "Beginner’s luck.\n"
-        "Enjoy the minor leagues, Director.\n"
-        "I’ll be watching.",
-    ),
-]
-
-WEEK1_BATTLE_POST_LOSS = [
-    (
-        "JACOB (PERCUSSION)",
-        "We drifted. The phrase fell apart.\n\n"
-        "Check the Judge’s sheet, clean the code, and rep it again.",
-    )
 ]

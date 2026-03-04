@@ -8,42 +8,108 @@ from .constants import WHITE
 
 class Assets:
     def __init__(self, base_dir: str):
+        # base_dir comes from main.py and can vary (project root, cop package dir, etc.)
         self.base_dir = base_dir
-        self.logo = None
-        self.font_s = None
-        self.font_m = None
-        self.font_l = None
-        self.font_code = None
-        self.font_code_s = None
+        self.logo: pygame.Surface | None = None
+
+        # Typography
+        self.font_s: pygame.font.Font | None = None
+        self.font_m: pygame.font.Font | None = None
+        self.font_l: pygame.font.Font | None = None
+        self.font_code: pygame.font.Font | None = None
+        self.font_code_s: pygame.font.Font | None = None
+
+        # Portraits (story)
+        self.portraits: dict[str, pygame.Surface] = {}
+
+    def _find_asset(self, *parts: str) -> str | None:
+        """Find an asset path across a few likely roots."""
+        roots = []
+        # Provided base_dir (sometimes project root, sometimes cop/)
+        roots.append(self.base_dir)
+        # Parent (if base_dir is cop/)
+        roots.append(os.path.dirname(self.base_dir))
+        # CWD (when running from repo root in a terminal)
+        roots.append(os.getcwd())
+
+        for root in roots:
+            p = os.path.join(root, *parts)
+            if os.path.exists(p):
+                return p
+        return None
+
+    @staticmethod
+    def _make_logo_transparent(logo: pygame.Surface) -> pygame.Surface:
+        """Remove the solid blue disc/background from the cougar logo so it blends."""
+        surf = logo.convert_alpha()
+        w, h = surf.get_size()
+        # Sample center pixel (usually the blue disc). We'll remove colors close to it.
+        cx, cy = w // 2, h // 2
+        key = surf.get_at((cx, cy))
+        key_rgb = (key.r, key.g, key.b)
+
+        out = pygame.Surface((w, h), pygame.SRCALPHA)
+        px = pygame.PixelArray(surf)
+        out_px = pygame.PixelArray(out)
+
+        # Tolerance tuned for this logo: remove disc blue + any near-black padding.
+        tol_disc = 45
+        tol_black = 18
+
+        def close(a, b, tol):
+            return abs(a[0]-b[0]) <= tol and abs(a[1]-b[1]) <= tol and abs(a[2]-b[2]) <= tol
+
+        for y in range(h):
+            for x in range(w):
+                c = surf.unmap_rgb(px[x, y])
+                rgb = (c.r, c.g, c.b)
+                if close(rgb, key_rgb, tol_disc) or close(rgb, (0, 0, 0), tol_black):
+                    out_px[x, y] = (0, 0, 0, 0)
+                else:
+                    out_px[x, y] = c
+
+        del px
+        del out_px
+        return out
 
     def load(self) -> None:
         """
-        Typography goals:
-        - readable at low logical resolution (384x216)
-        - crisp when scaled up (we always integer-scale the whole framebuffer)
-        - consistent line height (use font.get_linesize())
+        Visual goals (pixel UI):
+        - keep the retro/pixel vibe (no smooth system fonts)
+        - readable at 384x216
+        - monospace for code
         """
-        # Use system monospace if available for code, fall back to default.
-        # NOTE: UI now renders with antialias=True for readability (especially when scaled).
-        self.font_s = pygame.font.Font(None, 18)   # body
-        self.font_m = pygame.font.Font(None, 24)   # headings/buttons
-        self.font_l = pygame.font.Font(None, 40)   # big titles
+        # Default pygame font is crisp in this game because we scale the framebuffer.
+        # (We also render with antialias=False throughout the UI helpers.)
+        self.font_s = pygame.font.Font(None, 18)
+        self.font_m = pygame.font.Font(None, 24)
+        self.font_l = pygame.font.Font(None, 44)
 
-        try:
-            self.font_code = pygame.font.SysFont("Consolas", 18)
-        except Exception:
-            self.font_code = pygame.font.Font(None, 18)
+        self.font_code = pygame.font.Font(None, 16)
+        self.font_code_s = pygame.font.Font(None, 12)
 
+        # Logo (try multiple roots so it never falls back accidentally)
+        logo_path = self._find_asset("assets", "cgu_cougar_logo.png")
+        if logo_path:
+            try:
+                raw = pygame.image.load(logo_path).convert_alpha()
+                self.logo = self._make_logo_transparent(raw)
+            except Exception:
+                self.logo = None
 
-        try:
-            self.font_code_s = pygame.font.SysFont("Consolas", 14)
-        except Exception:
-            self.font_code_s = pygame.font.Font(None, 14)
+        if not self.logo:
+            # Fallback: no huge ring, just a tiny badge so the title screen doesn't look broken.
+            self.logo = pygame.Surface((24, 24), pygame.SRCALPHA)
+            pygame.draw.circle(self.logo, WHITE, (12, 12), 10, 2)
 
-        logo_path = os.path.join(self.base_dir, "assets", "cgu_cougar_logo.png")
-        if os.path.exists(logo_path):
-            img = pygame.image.load(logo_path).convert_alpha()
-            self.logo = img
-        else:
-            self.logo = pygame.Surface((32, 32), pygame.SRCALPHA)
-            pygame.draw.circle(self.logo, WHITE, (16, 16), 15, 2)
+        # Story portraits (optional)
+        portraits_dir = self._find_asset("assets", "portraits")
+        if portraits_dir and os.path.isdir(portraits_dir):
+            for fn in os.listdir(portraits_dir):
+                if not fn.lower().endswith((".png", ".jpg", ".jpeg")):
+                    continue
+                key = os.path.splitext(fn)[0].lower()
+                try:
+                    self.portraits[key] = pygame.image.load(os.path.join(portraits_dir, fn)).convert_alpha()
+                except Exception:
+                    pass

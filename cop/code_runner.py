@@ -28,6 +28,8 @@ def _friendly_error(err: BaseException) -> str:
         return f"NameError: {msg}. Tip: define the variable before using it."
     if name == "TypeError":
         return f"TypeError: {msg}. Tip: check function arguments and value types."
+    if name == "AttributeError":
+        return f"{msg}. Tip: that command may be locked for this lesson."
     return f"{name}: {msg}"
 
 
@@ -63,6 +65,7 @@ def run_player_code(code: str, env: Dict[str, Any], *, line_limit: int = 8000) -
         "min": min,
         "max": max,
         "abs": abs,
+        "round": round,
         "int": int,
         "float": float,
         "str": str,
